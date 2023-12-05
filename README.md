@@ -117,7 +117,7 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 
 - Resposta:
 
-A resposta deve conter um JSON com informações do usuário deletado:
+A resposta deve conter um JSON com uma mensagem indicando que o usuário foi deletado com sucesso:
 
 ```json
 {
