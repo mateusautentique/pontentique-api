@@ -9,26 +9,54 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
+        try {
+            $users = User::all();
+            return response()->json($users);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        //return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
     }
 
     public function store(Request $request)
     {
-        return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
+        try {
+            $user = User::create($request->all());
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function show($id)
-    {
-        return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
+    {  
+        try {
+            $user = User::findOrFail($id);
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
+        try {
+            $user = User::findOrFail($id);
+            $user->update($request->all());
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy($id)
     {
-        return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
+        try {
+            $user = User::findOrFail($id);
+            $user->delete();
+            return response()->json(['message' => 'User successfully deleted.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }
