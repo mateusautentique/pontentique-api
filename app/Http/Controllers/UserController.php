@@ -10,7 +10,7 @@ class UserController extends Controller
     public function index()
     {
         try {
-            $users = User::all();
+            $users = User::all()->makeVisible('password');
             return response()->json($users);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
