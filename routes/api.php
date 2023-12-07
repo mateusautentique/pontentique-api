@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,5 +28,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::post('/clock', [ClockController::class, 'registerClock']);
+    Route::get('/clock', [ClockController::class, 'showAllUserClockEntries']);
+    Route::post('/filterclock', [ClockController::class, 'showUserClockEntriesByDate']);
+    Route::delete('/clock', [ClockController::class, 'deleteAllClockEntries']);
 });
 

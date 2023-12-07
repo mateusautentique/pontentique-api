@@ -15,7 +15,6 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-        //return response()->json(['message' => __CLASS__ . '@' . __FUNCTION__ .':'.__LINE__]);
     }
 
     public function store(Request $request)
