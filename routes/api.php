@@ -18,8 +18,6 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-
-
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -31,15 +29,3 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 });
 
-//DEBUG
-Route::get('/db-test', function () {
-    try {
-        Log::info('Attempting to connect to database...');
-        DB::connection()->getPdo();
-        Log::info('Successfully connected to the database.');
-        return response()->json(['message' => 'Successfully connected to the database.'], 200);
-    } catch (\Exception $e) {
-        Log::error('Could not connect to the database.', ['error' => $e->getMessage()]);
-        return response()->json(['message' => 'Could not connect to the database. Please check your configuration.'], 500);
-    }
-});
