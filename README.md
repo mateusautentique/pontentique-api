@@ -79,13 +79,13 @@ A resposta deve ser um JSON contendo um atributo `Token` com um token de autenti
 
 ------------------------------------------------------
 
-# Requisições
+# Requisições de usuários
 
 > A partir desse ponto, todas as requisições necessitam de um token válido no atributo de Authorization, semelhante ao citado no início dessa documentação.
 
 ## Listar todos os usuários
 
-`GET` para http://localhost/api/users
+`GET` para http://localhost/api/admin/users
 
 - Response:
 
@@ -114,7 +114,7 @@ A resposta deve conter um JSON com informações de todos os usuários cadastrad
 
 ## Listar um usuário específico
 
-`GET` para http://localhost/api/users/{id}
+`GET` para http://localhost/api/admin/users/{id}
 
 - Response:
 
@@ -133,7 +133,7 @@ A resposta deve conter um JSON com informações do usuário com o id especifica
 
 ## Atualizar um usuário
 
-`PUT` para http://localhost/api/users/{id}
+`PUT` para http://localhost/api/admin/users/{id}
 
 A requisição deve conter um JSON com os campos a serem alterados:
 
@@ -165,14 +165,38 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 
 ## Deletar um usuário
 
-`DELETE` para http://localhost/api/users/{id}
+`DELETE` para http://localhost/api/admin/users/{id}
 
-- Resposta:
+- Response:
 
 A resposta deve conter um JSON com uma mensagem indicando que o usuário foi deletado com sucesso:
 
 ```json
 {
     "message": "Usuário deletado com sucesso!"
+}
+```
+
+---
+
+# Requisições de ponto
+
+## Bater o ponto
+
+`POST` para http://localhost/api/user/punchClock
+
+- Body:
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário que irá bater o ponto.
+
+- Response
+
+A resposta contém uma mensagem que indica que o ponto foi marcado com sucesso, bem como o dia e a hora da marcação.
+
+Exemplo:
+
+```json
+{
+    "message": "Clock event registered successfully at 2023-12-08 19:47:01"
 }
 ```
