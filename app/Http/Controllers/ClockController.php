@@ -37,7 +37,7 @@ class ClockController extends Controller
                 ->groupBy(function ($event) {
                     return $event->timestamp->format('Y-m-d');
                 })
-                ->map(function ($eventsForDate, $date) {
+                ->map(function ($eventsForDate) {
                     return $eventsForDate->map(function ($event, $index) {
                         return [
                             'id' => $event->user->id,
