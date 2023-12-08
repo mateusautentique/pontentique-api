@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('clock_events', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('event_type', ['entry', 'leave']);
             $table->timestamp('timestamp');
             $table->timestamps();
+            $table->string('justification')->nullable();
         });
     }
 

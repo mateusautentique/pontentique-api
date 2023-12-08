@@ -31,7 +31,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/clock', [ClockController::class, 'registerClock']);
     Route::get('/clock', [ClockController::class, 'showAllUserClockEntries']);
-    Route::post('/filterclock', [ClockController::class, 'showUserClockEntriesByDate']);
+    Route::post('/filterclock', [ClockController::class, 'getClockEventsByPeriod']);
     Route::delete('/clock', [ClockController::class, 'deleteAllClockEntries']);
 });
 

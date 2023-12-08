@@ -11,7 +11,16 @@ class ClockEvent extends Model
 
     protected $fillable = [
         'user_id',
-        'event_type',
-        'timestamp'
+        'timestamp',
+        'justification'
     ];
+
+    protected $casts = [
+        'timestamp' => 'datetime',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
