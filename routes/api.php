@@ -28,6 +28,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
         Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
         Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);
+        Route::post('/calculateHours', [ClockController::class, 'calculateHoursWorkedByPeriod']);
     });
 
     //Admin routes
