@@ -25,7 +25,7 @@ class ClockController extends Controller
         }
     }
 
-    public function showAllUserClockEntries(Request $request)
+    public function getAllUserClockEntries(Request $request)
     {
         $clockEvents = ClockEvent::where('user_id', $request->user()->id)->get();
         return response()->json($clockEvents);
