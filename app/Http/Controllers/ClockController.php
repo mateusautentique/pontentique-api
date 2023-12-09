@@ -38,18 +38,27 @@ class ClockController extends Controller
                     return $event->timestamp->format('Y-m-d');
                 })
                 ->map(function ($eventsForDate) {
-                    return $eventsForDate->map(function ($event, $index) {
+                    $totalTimeWorked = $this->calculateTotalTimeWorked($eventsForDate);
+                    $events = $eventsForDate->map(function ($event, $index) {
                         return [
-                            'id' => $event->user->id,
-                            'user_name' => $event->user->name,
+                            'id' => $event->id,
                             'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
                             'justification' => $event->justification,
-                            'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
+                            'type' => $index % 2 == 0 ? 'clock_out' : 'clock_in',
                         ];
                     });
+
+                    return [
+                        'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
+                        'user_name' => $eventsForDate->first()->user->name,
+                        'user_id' => $eventsForDate->first()->user->id,
+                        'hours_worked_on_day' => (int)($totalTimeWorked / 3600),
+                        'extra_minutes_worked_on_day' => (int)(($totalTimeWorked % 3600) / 60),
+                        'events' => $events,
+                    ];
                 });
 
-            return response()->json($clockEvents);
+            return response()->json(['entry' => $clockEvents->values()]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
@@ -57,6 +66,7 @@ class ClockController extends Controller
             return response()->json(['message' => 'An error occurred'], 500);
         }
     }
+
 
     //CLOCK CRUD
 
@@ -157,21 +167,12 @@ class ClockController extends Controller
             foreach ($clockEventsGroupedByDay as $day => $clockEvents) {
                 $totalHoursWorked = 0;
 
-                for ($i = 0; $i < count($clockEvents); $i += 2) {
-                    $clockInEvent = $clockEvents[$i];
-                    $clockOutEvent = $clockEvents[$i + 1] ?? null;
-
-                    if ($clockOutEvent) {
-                        $hoursWorked = $clockInEvent->timestamp->diffInHours($clockOutEvent->timestamp);
-                        $totalHoursWorked += $hoursWorked;
-                    }
-                }
-                $totalHoursWorkedPerDay[$day] = $totalHoursWorked;
+                $totalHoursWorkedPerDay[$day] = $this->calculateTotalTimeWorked($clockEvents) / 3600;
             }
 
             return response()->json([
-                'total_hours_worked' => array_sum($totalHoursWorkedPerDay),
-                'total_money_earned' => array_sum($totalHoursWorkedPerDay) * $hourRate,
+                'total_hours_worked' => (int)array_sum($totalHoursWorkedPerDay),
+                'total_money_earned' => number_format((float)array_sum($totalHoursWorkedPerDay) * $hourRate, 2),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
@@ -181,9 +182,26 @@ class ClockController extends Controller
         }
     }
 
+    private function calculateTotalTimeWorked($eventsForDate)
+    {
+        $totalTimeWorked = 0;
+
+        for ($i = 0; $i < count($eventsForDate); $i += 2) {
+            $clockInEvent = $eventsForDate[$i];
+            $clockOutEvent = $eventsForDate[$i + 1] ?? null;
+
+            if ($clockOutEvent) {
+                $timeWorked = $clockInEvent->timestamp->diffInSeconds($clockOutEvent->timestamp);
+                $totalTimeWorked += $timeWorked;
+            }
+        }
+        
+        return $totalTimeWorked;
+    }
+
     //UTILS
 
-    public function validateDataIntoQuery(Request $request)
+    private function validateDataIntoQuery(Request $request)
     {
         $validatedData = $request->validate([
             'user_id' => 'required',
@@ -202,7 +220,7 @@ class ClockController extends Controller
         } elseif (!$startDate && $endDate) {
             $startDate = Carbon::minValue();
         } elseif (!$startDate && !$endDate) {
-            $startDate = Carbon::now();
+            $startDate = Carbon::minValue();
             $endDate = Carbon::now();
         }
 
