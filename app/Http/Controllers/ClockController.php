@@ -33,7 +33,7 @@ class ClockController extends Controller
         try {
             $query = $this->validateDataIntoQuery($request);
 
-            $clockEvents = $query->orderBy('timestamp', 'desc')->get()
+            $clockEvents = $query->orderBy('timestamp', 'asc')->get()
                 ->groupBy(function ($event) {
                     return $event->timestamp->format('Y-m-d');
                 })
@@ -44,7 +44,7 @@ class ClockController extends Controller
                             'id' => $event->id,
                             'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
                             'justification' => $event->justification,
-                            'type' => $index % 2 == 0 ? 'clock_out' : 'clock_in',
+                            'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
                         ];
                     });
 
@@ -54,6 +54,7 @@ class ClockController extends Controller
                         'user_id' => $eventsForDate->first()->user->id,
                         'hours_worked_on_day' => (int)($totalTimeWorked / 3600),
                         'extra_minutes_worked_on_day' => (int)(($totalTimeWorked % 3600) / 60),
+                        'event_count' => $eventsForDate->count(),
                         'events' => $events,
                     ];
                 });
