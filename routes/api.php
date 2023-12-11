@@ -34,7 +34,7 @@ Route::middleware('auth:api')->group(function () {
     //Admin routes
     Route::prefix('admin')->group(function () {
         Route::prefix('userEntries')->group(function () {
-            Route::get('/', [ClockController::class, 'getAllUserClockEntriesU']);
+            Route::get('/', [ClockController::class, 'getAllUserClockEntries']);
             Route::post('/', [ClockController::class, 'insertClockEntry']);
             Route::put('/', [ClockController::class, 'updateClockEntry']);
             Route::delete('/', [ClockController::class, 'deleteClockEntry']);

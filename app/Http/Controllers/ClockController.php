@@ -48,18 +48,38 @@ class ClockController extends Controller
                         ];
                     });
 
+                    $normalHours = ($totalTimeWorked / 3600) >= 8 ? 8 : (int)($totalTimeWorked / 3600);
+                    $extraHours = ($totalTimeWorked / 3600) - $normalHours;
+
                     return [
                         'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
                         'user_name' => $eventsForDate->first()->user->name,
                         'user_id' => $eventsForDate->first()->user->id,
-                        'hours_worked_on_day' => (int)($totalTimeWorked / 3600),
-                        'extra_minutes_worked_on_day' => (int)(($totalTimeWorked % 3600) / 60),
+                        'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHours),
+                        'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHours),
+                        'total_time_worked_in_seconds' => $totalTimeWorked,
                         'event_count' => $eventsForDate->count(),
                         'events' => $events,
                     ];
                 });
 
-            return response()->json(['entry' => $clockEvents->values()]);
+            $totalTimeWorkedInSeconds = $clockEvents->sum('total_time_worked_in_seconds');
+            $totalNormalHours = $clockEvents->map(function ($clockEvent) {
+                return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
+            })->sum();
+
+            return response()->json([
+                'total_hours_worked' => $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
+                'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
+                'total_hour_balance' => $this->calculateBalanceOfHours(
+                    8, //TODO: get from user
+                    $totalTimeWorkedInSeconds / 3600,
+                    $clockEvents->filter(function ($event) {
+                        return $event['event_count'] >= 2;
+                    })->count()
+                ),
+                'entries' => $clockEvents->values(),
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
@@ -67,7 +87,6 @@ class ClockController extends Controller
             return response()->json(['message' => 'An error occurred'], 500);
         }
     }
-
 
     //CLOCK CRUD
 
@@ -159,21 +178,11 @@ class ClockController extends Controller
 
             $clockEvents = $query->orderBy('timestamp', 'asc')->get();
 
-            $clockEventsGroupedByDay = $clockEvents->groupBy(function ($date) {
-                return Carbon::parse($date->timestamp)->format('Y-m-d');
-            });
-
-            $totalHoursWorkedPerDay = [];
-
-            foreach ($clockEventsGroupedByDay as $day => $clockEvents) {
-                $totalHoursWorked = 0;
-
-                $totalHoursWorkedPerDay[$day] = $this->calculateTotalTimeWorked($clockEvents) / 3600;
-            }
+            $totalHoursWorkedPerDay = $this->calculateTotalHoursWorkedPerDay($clockEvents);
 
             return response()->json([
-                'total_hours_worked' => (int)array_sum($totalHoursWorkedPerDay),
-                'total_money_earned' => number_format((float)array_sum($totalHoursWorkedPerDay) * $hourRate, 2),
+                'total_hours_worked' => array_sum($totalHoursWorkedPerDay),
+                'total_money_earned' => number_format(array_sum($totalHoursWorkedPerDay) * $hourRate, 2),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
@@ -196,8 +205,23 @@ class ClockController extends Controller
                 $totalTimeWorked += $timeWorked;
             }
         }
-        
+
         return $totalTimeWorked;
+    }
+
+    private function calculateTotalHoursWorkedPerDay($clockEvents)
+    {
+        $clockEventsGroupedByDay = $clockEvents->groupBy(function ($date) {
+            return Carbon::parse($date->timestamp)->format('Y-m-d');
+        });
+
+        $totalHoursWorkedPerDay = [];
+
+        foreach ($clockEventsGroupedByDay as $day => $eventsForDate) {
+            $totalHoursWorkedPerDay[$day] = $this->calculateTotalTimeWorked($eventsForDate) / 3600;
+        }
+
+        return $totalHoursWorkedPerDay;
     }
 
     //UTILS
@@ -211,20 +235,36 @@ class ClockController extends Controller
         ]);
 
         $userId = $validatedData['user_id'];
-        $startDate = isset($validatedData['start_date']) ? Carbon::parse($validatedData['start_date']) : null;
-        $endDate = isset($validatedData['end_date']) ? Carbon::parse($validatedData['end_date']) : null;
+        $startDate = $validatedData['start_date'] ?? Carbon::minValue();
+        $endDate = $validatedData['end_date'] ?? Carbon::now();
+
+        $startDate = Carbon::parse($startDate);
+        $endDate = Carbon::parse($endDate);
 
         $query = ClockEvent::where('user_id', $userId)->with('user');
 
-        if ($startDate && !$endDate) {
-            $endDate = Carbon::now();
-        } elseif (!$startDate && $endDate) {
-            $startDate = Carbon::minValue();
-        } elseif (!$startDate && !$endDate) {
-            $startDate = Carbon::minValue();
-            $endDate = Carbon::now();
-        }
-
         return $query->whereBetween('timestamp', [$startDate, $endDate]);
+    }
+
+    private function calculateBalanceOfHours($workJourneyHours, $totalTimeWorked, $daysWorked)
+    {
+        $balanceOfHours = $totalTimeWorked - ($workJourneyHours * $daysWorked);
+        return $this->convertDecimalToTime($balanceOfHours);
+    }
+
+    private function convertDecimalToTime($hoursDecimal)
+    {
+        $hours = intval($hoursDecimal);
+        $decimalHours = $hoursDecimal - $hours;
+        $minutes = round($decimalHours * 60);
+        return sprintf("%d:%02d", $hours, $minutes);
+    }
+
+    private function convertTimeToDecimal($time)
+    {
+        $parts = explode(':', $time);
+        $hours = $parts[0];
+        $minutes = $parts[1];
+        return $hours + ($minutes / 60);
     }
 }
