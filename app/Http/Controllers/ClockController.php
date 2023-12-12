@@ -48,8 +48,9 @@ class ClockController extends Controller
                         ];
                     });
 
-                    $normalHours = ($totalTimeWorked / 3600) >= 8 ? 8 : (int)($totalTimeWorked / 3600);
-                    $extraHours = ($totalTimeWorked / 3600) - $normalHours;
+                    $totalHoursWorked = $totalTimeWorked / 3600;
+                    $normalHours = $totalHoursWorked >= 8 ? 8 : (int)$totalHoursWorked;
+                    $extraHours = $totalHoursWorked - $normalHours;
 
                     return [
                         'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
@@ -130,7 +131,7 @@ class ClockController extends Controller
 
             $clockEvent = ClockEvent::create($validatedData);
 
-            return response()->json(['message' => 'Clock entry inserted successfully']);
+            return response()->json(['message' => 'Clock entry inserted successfully at ' . $clockEvent['timestamp'] . ' with id ' . $clockEvent['id'], 'id' => $clockEvent['id'] ?? '']);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Failed to insert clock entry'], 500);
@@ -151,7 +152,7 @@ class ClockController extends Controller
             if ($clockEvent) {
                 $clockEvent->update($validatedData);
 
-                return response()->json(['message' => 'Clock entry updated successfully']);
+                return response()->json(['message' => 'Clock entry updated successfully to ' . $clockEvent['timestamp'] . ' with justification: ' . $clockEvent['justification']]);
             } else {
                 return response()->json(['message' => 'Clock entry not found'], 404);
             }
@@ -181,7 +182,7 @@ class ClockController extends Controller
             $totalHoursWorkedPerDay = $this->calculateTotalHoursWorkedPerDay($clockEvents);
 
             return response()->json([
-                'total_hours_worked' => array_sum($totalHoursWorkedPerDay),
+                'total_hours_worked' => $this->convertDecimalToTime(array_sum($totalHoursWorkedPerDay)),
                 'total_money_earned' => number_format(array_sum($totalHoursWorkedPerDay) * $hourRate, 2),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

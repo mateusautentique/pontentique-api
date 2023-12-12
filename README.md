@@ -32,7 +32,7 @@ Os campos devem ser os seguintes:
 - Body
 ```json
 {
-    "name": "Jair Teste da silva",
+    "name": "Jair Teste da Silva",
     "email": "jairtestetesteteste@tuamaeaquelaursa.com",
     "password": "umasenhabemsegura",
     "password_confirmation": "umasenhabemsegura",
@@ -87,7 +87,7 @@ A resposta deve ser um JSON contendo um atributo `Token` com um token de autenti
 
 `GET` para http://localhost/api/admin/users
 
-- Response:
+- Response
 
 A resposta deve conter um JSON com informações de todos os usuários cadastrados no banco de dados:
 ```json
@@ -116,7 +116,7 @@ A resposta deve conter um JSON com informações de todos os usuários cadastrad
 
 `GET` para http://localhost/api/admin/users/{id}
 
-- Response:
+- Response
 
 A resposta deve conter um JSON com informações do usuário com o id especificado:
 
@@ -148,7 +148,7 @@ A requisição deve conter um JSON com os campos a serem alterados:
 }
 ```
 
-- Response:
+- Response
 
 A resposta deve conter um JSON com informações do usuário atualizado:
 
@@ -167,7 +167,7 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 
 `DELETE` para http://localhost/api/admin/users/{id}
 
-- Response:
+- Response
 
 A resposta deve conter um JSON com uma mensagem indicando que o usuário foi deletado com sucesso:
 
@@ -185,7 +185,7 @@ A resposta deve conter um JSON com uma mensagem indicando que o usuário foi del
 
 `POST` para http://localhost/api/user/punchClock
 
-- Body:
+- Body
 
 O body da requisição deve conter um campo "user_id", que representa o id do usuário que irá bater o ponto.
 
@@ -200,3 +200,279 @@ Exemplo:
     "message": "Clock event registered successfully at 2023-12-08 19:47:01"
 }
 ```
+
+## Listar todos os pontos de um usuário
+
+`GET` para http://localhost/api/user/userEntries
+
+- Response
+
+A resposta contém um JSON com todos os pontos do usuário.
+
+Exemplo:
+
+```json
+[
+    {
+        "id": 1,
+        "user_id": 1,
+        "timestamp": "2023-12-11T14:13:10.000000Z",
+        "created_at": "2023-12-11T14:13:10.000000Z",
+        "updated_at": "2023-12-11T14:13:10.000000Z",
+        "justification": null
+    },
+    {
+        "id": 2,
+        "user_id": 1,
+        "timestamp": "2023-12-10T18:30:00.000000Z",
+        "created_at": "2023-12-08T19:40:02.000000Z",
+        "updated_at": "2023-12-08T19:40:02.000000Z",
+        "justification": "i forgor"
+    },
+    ...
+]
+```
+
+## Listar as atividades de um usuário em um período específico
+
+`POST` para http://localhost/api/user/userEntries/
+
+Essa requisição é utilizada para listar os pontos de um usuário em um período específico. Ela traz informações mais detalhadas sobre os batimentos de ponto, indicando quantidade de horas trabalhadas, e se a batida foi uma entrada ou uma saída, por exemplo. Além disso, ela também contém o tempo total trabalhado no período, número de horas normais trabalhadas e o banco de horas resultante.
+
+Essa função possui o intuito de ser uma ferramenta geral para a apuração de ponto, e pode ser utilizada para gerar relatórios de ponto, por exemplo.
+
+- Body
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário, e dois campos adicionais: "start_date" e "end_date" (no formato "YYYY-MM-DD"), que representam o início e o fim do período que se deseja consultar.
+
+Ambos os campos são opcionais, e adiconam um fator dinâmico à função. Caso apenas o campo "start_date" não seja especificado, o período de consulta será de todos os dias até a data especificada no campo "end_date". Caso apenas o campo "end_date" não seja especificado, o período de consulta será de todos os dias a partir da data especificada no campo "start_date", até o dia atual. Caso nenhum dos dois campos seja especificado, o período de consulta será de todos os dias.
+
+Exemplo:
+
+```json
+{
+    "user_id": 1,
+    "start_date": "2023-12-08",
+    "end_date": "2023-12-11"
+}
+```
+
+> Lista todos os pontos do usuário com id 1, entre os dias 08/12/2023 e 11/12/2023.
+
+Ou
+
+```json
+{
+    "user_id": 1,
+    "start_date": "2023-01-01"
+}
+```
+
+> Lista todos os pontos do usuário com id 1, do dia 01/01/2023 até o dia atual.
+
+Ou
+
+```json
+{
+    "user_id": 1,
+    "end_date": "2023-12-11"
+}
+```
+
+> Lista todos os pontos do usuário com id 1, até o dia 11/12/2023.
+
+Ou
+
+```json
+{
+    "user_id": 1
+}
+```
+
+> Lista todos os pontos do usuário com id 1.
+
+- Response
+
+A resposta contém um JSON com diversas informações sobre os pontos do usuário no período especificado.
+
+- Exemplo
+
+```json
+{
+    "total_hours_worked": "13:51",
+    "total_normal_hours_worked": "8:00",
+    "total_hour_balance": "5:51",
+    "entries": [
+        {
+            "day": "2023-12-01",
+            "user_name": "Jair Teste da Silva",
+            "user_id": 1,
+            "normal_hours_worked_on_day": "8:00",
+            "extra_hours_worked_on_day": "5:51",
+            "total_time_worked_in_seconds": 49836,
+            "event_count": 4,
+            "events": [
+                {
+                    "id": 6,
+                    "timestamp": "2023-12-01 06:01:11",
+                    "justification": "i forgot",
+                    "type": "clock_in"
+                },
+                {
+                    "id": 7,
+                    "timestamp": "2023-12-01 12:41:17",
+                    "justification": "i forgot",
+                    "type": "clock_out"
+                },
+                {
+                    "id": 8,
+                    "timestamp": "2023-12-01 13:21:55",
+                    "justification": "i forgot",
+                    "type": "clock_in"
+                },
+                {
+                    "id": 9,
+                    "timestamp": "2023-12-01 20:32:25",
+                    "justification": "i forgot",
+                    "type": "clock_out"
+                }
+            ]
+        }
+    ]
+}
+```
+
+Os campos representam:
+
+- `total_hours_worked`: Tempo total trabalhado no período.
+- `total_normal_hours_worked`: Tempo total trabalhado no período, desconsiderando horas extras.
+- `total_hour_balance`: Banco de horas resultante do período.
+
+- `entries`: Lista de dias com pontos registrados no período.
+
+    - `day`: Dia em que os pontos foram registrados.
+    - `user_name`: Nome do usuário.
+    - `user_id`: Id do usuário.
+    - `normal_hours_worked_on_day`: Horas normais trabalhadas no dia.
+    - `extra_hours_worked_on_day`: Horas extras trabalhadas no dia.
+    - `total_time_worked_in_seconds`: Tempo total trabalhado no dia, em segundos.
+    - `event_count`: Número de pontos registrados no dia.
+    - `events`: Lista de pontos registrados no dia.
+
+        - `id`: Id do ponto.
+        - `timestamp`: Data e hora do ponto.
+        - `justification`: Justificativa do ponto.
+        - `type`: Tipo do ponto. Pode ser "clock_in" ou "clock_out".
+
+
+
+## Calcular as horas e o valor a receber de um usuário em um período específico
+
+`POST` para http://localhost/api/user/calculateHours
+
+- Body
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário, e dois campos adicionais: "start_date" e "end_date" (no formato "YYYY-MM-DD"), que representam o início e o fim do período que se deseja consultar, funcionando de um jeito similar à requisição anteiror. Além disso, deve-se especificar o valor da hora do usuário, no campo "hour_rate".
+
+Exemplo:
+
+```json
+{
+    "user_id": 1,
+    "start_date": "2023-12-08",
+    "end_date": "2023-12-11",
+    "hour_rate": 25
+}
+```
+
+> Calcula as horas e o valor a receber do usuário com id 1, entre os dias 08/12/2023 e 11/12/2023, com o valor da hora sendo R$ 25,00.
+
+- Response
+
+```json
+{
+    "total_hours_worked": "13:51",
+    "total_money_earned": "346.08"
+}
+```
+
+Os campos representam:
+
+- `total_hours_worked`: Tempo total trabalhado no período.
+- `total_money_earned`: Valor total a receber no período.
+
+---
+
+## Inserir um ponto manualmente
+
+`POST` para http://localhost/api/admin/userEntries
+
+- Body
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário, e dois campos adicionais: "timestamp" (no formato "YYYY-MM-DD HH:MM:SS"), que representa a data e hora do ponto, e "justification", que representa a justificativa do ponto.
+
+> Toda inserção ou alteração de ponto deve obrigatoriamente possuir uma justificativa.
+
+Exemplo:
+
+```json
+{
+    "user_id": 1,
+    "timestamp": "2023-12-08 19:40:02",
+    "justification": "i forgor"
+}
+```
+
+> Insere um ponto para o usuário com id 1, no dia 08/12/2023 às 19:40:02, com a justificativa "i forgor".
+
+- Response
+
+```json
+{
+    "message": "Clock entry inserted successfully at 2023-12-08 19:40:02 with id 15"
+}
+```
+
+## Atualizar um ponto manualmente
+
+`PUT` para http://localhost/api/admin/userEntries/
+
+- Body
+
+O body da requisição deve conter um campo "id", que representa o id do ponto, e dois campos adicionais: "timestamp" (no formato "YYYY-MM-DD HH:MM:SS"), que representa a data e hora do ponto, e "justification", que representa a justificativa do ponto.
+
+> Toda inserção ou alteração de ponto deve obrigatoriamente possuir uma justificativa.
+
+Exemplo:
+
+```json
+{
+    "id": 15,
+    "timestamp": "2023-12-08 19:40:02",
+    "justification": "surpreendentemente não é i forgor"
+}
+```
+
+> Atualiza o ponto com id 15, para o dia 08/12/2023 às 19:40:02, com a justificativa "i forgor".
+
+- Response
+
+```json
+{
+    "message": "Clock entry updated successfully to 2023-12-08 19:40:02 with justification: surpreendentemente não é i forgor"
+}
+```
+
+## Deletar um ponto manualmente
+
+`DELETE` para http://localhost/api/admin/userEntries/
+
+- Response
+
+```json
+{
+    "message": "Clock entry deleted successfully"
+}
+```
+
+---
