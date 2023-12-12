@@ -48,16 +48,15 @@ class ClockController extends Controller
                         ];
                     });
 
-                    $totalHoursWorked = $totalTimeWorked / 3600;
-                    $normalHours = $totalHoursWorked >= 8 ? 8 : (int)$totalHoursWorked;
-                    $extraHours = $totalHoursWorked - $normalHours;
+                    $extraHoursInSec = $totalTimeWorked % 28800;
+                    $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
 
                     return [
                         'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
-                        'user_name' => $eventsForDate->first()->user->name,
                         'user_id' => $eventsForDate->first()->user->id,
-                        'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHours),
-                        'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHours),
+                        'user_name' => $eventsForDate->first()->user->name,
+                        'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
+                        'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
                         'total_time_worked_in_seconds' => $totalTimeWorked,
                         'event_count' => $eventsForDate->count(),
                         'events' => $events,
