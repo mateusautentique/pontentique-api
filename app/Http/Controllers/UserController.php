@@ -7,7 +7,7 @@ use App\Models\User;
 
 class UserController extends Controller
 {
-    public function index()
+    public function getAllUsers()
     {
         try {
             $users = User::all()->makeVisible('password');
@@ -17,7 +17,7 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function insertUser(Request $request)
     {
         try {
             $user = User::create($request->all());
@@ -27,7 +27,7 @@ class UserController extends Controller
         }
     }
 
-    public function show($id)
+    public function getUserById($id)
     {  
         try {
             $user = User::findOrFail($id);
@@ -37,7 +37,7 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function updateUser(Request $request, $id)
     {
         try {
             $user = User::findOrFail($id);
@@ -48,7 +48,7 @@ class UserController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function deleteUser($id)
     {
         try {
             $user = User::findOrFail($id);

@@ -24,7 +24,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/validateToken', [AuthController::class, 'validateToken']);
 
 Route::middleware('auth:api')->group(function () {
-    //User routes
+    Route::post('/logout', [AuthController::class, 'logout']);
+
     Route::prefix('user')->group(function () {
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
         Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
@@ -32,17 +33,20 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/calculateHours', [ClockController::class, 'calculateHoursWorkedByPeriod']);
     });
 
-    //Admin routes
     Route::prefix('admin')->group(function () {
         Route::prefix('userEntries')->group(function () {
             Route::get('/', [ClockController::class, 'getAllUserClockEntries']);
             Route::post('/', [ClockController::class, 'insertClockEntry']);
             Route::put('/', [ClockController::class, 'updateClockEntry']);
             Route::delete('/', [ClockController::class, 'deleteClockEntry']);
-
-            Route::delete('/clear', [ClockController::class, 'deleteAllClockEntries']);
         });
 
-        Route::apiResource('users', UserController::class);
+        Route::prefix('manageUsers')->group(function () {
+            Route::get('/', [UserController::class, 'getAllUsers']);
+            Route::post('/user', [UserController::class, 'insertUser']);
+            Route::get('/user/{id}', [UserController::class, 'getUserById']);
+            Route::put('/user/{id}', [UserController::class, 'updateUser']);
+            Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
+        });
     });
 });
