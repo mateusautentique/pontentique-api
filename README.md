@@ -1,13 +1,20 @@
 # Guia para utilizar o Pontentique API
 
+Este é um guia para utilizar a API do Pontentique, um sistema de controle de ponto eletrônico de uso interno.
+
+Até o momento, a API possui as seguintes funcionalidades:
+
+- Armazenamento e autenticação de usuários
+- Registro de batidas de ponto
+- Relatórios sobre batidas de ponto
+- Cálculo de horas trabalhadas e valor a receber
+- Inserção, atualização e remoção de batidas de ponto manualmente
+
 Abaixo, estarão listados alguns exemplos de requisições. Todos elas (exceto registro e login) requerem um token de autenticação válido, caso contrário, elas retornam um erro **401** (*Unauthorized*).
 
-Com exceção de login e do registro, todas as requisições devem possuir os seguintes atributos:
+Todas as requisições (com excessão as de autenticação) são divididas em *user* e *admin*, indicando o nível de acesso indicado para elas. As requisições de *user* são aquelas que podem ser feitas por qualquer usuário, enquanto as de *admin* são aquelas que só podem ser feitas por administradores. Isso pode ser visto na URL das requisições, que contém o prefixo `/user/` ou `/admin/`.
 
-- Header
-```json
-"Accept": "application/json"
-```
+- Exemplo
 
  - Authorization
 ```json
@@ -15,6 +22,13 @@ Com exceção de login e do registro, todas as requisições devem possuir os se
 ```
 
 > Obviamente, esse é um token de exemplo e consequentemente não é válido :D
+
+Todas as requisições devem conter um header `Accept` com o valor `application/json`.
+
+- Header
+```json
+"Accept": "application/json"
+```
 
 ------------------------------------------------------
 
@@ -77,15 +91,41 @@ A resposta deve ser um JSON contendo um atributo `Token` com um token de autenti
 "token": "ayJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5YWM3MzBlMC03MDFiLTQ0YTYtYmU2Yi1mYjZhMWQ2NzBiYjgiLCJqdGkiOiIwZTI0YmZhNTgwOGU3MTUyYmExY2FkNDM1MTdlNzA5MjVmNzY2ZDdlM2RlZjBkM2ZkMmExZTg1MTUwMzFjMmIwMGUyNjM3MTVhMjMyY2E5NyIsImlhdCI6MTcwMTg3MTgyMy4yNTYzMDcsIm5iZiI6MTcwMTg3MTgyMy4yNTYzMDksImV4cCI6MTczMzQ5NDIyMy4yNTExOTIsInN1YiI6IjEwIiwic2NvcGVzIjpbXX0.NV9DC-MjNV73cb1kOsvbHLxRKtiHrobHoIO34cnoU8yASb7yc_VP9cVtdn2gLbDZce92_Te11Jp_kX_MjkTLTktGMFJHouzZ_Sh_EO8WAwQI4OfXchOP0RtSYZSIAqxeiAW1Bo38POBn-9PgrxRZLoESsqjTZpqlelAcwY61pUFwvgLLxpsqvyQzIIumyKYFpXGFdmiTq5E0LAuZfKpvM-GR_nv0yyr-Niw_6cSNVeznGLY-ZxRqZdQkWG6rdsfdnRzwBwCgMMa_IjzFr8d_22m64x4an1l0vseTAdMEJTk2k3ekLqyO2jN2t9ClIP935RJGIDu26qibUXJFaMdQ0h-UDh0FL1CDt-H889hGilpo8Azjpqr3CplQaFPNpPeEYt1E74u-ZuZitXGsSsFRG8XQDXNVyxz-PC1GI5u8ws4YzC00jwe7n8Ql9C4q6D0wF-b3wLwsl6rLv3D8BOsIEOLzg9TytiBLzvgClM-HHFRZkvyHtdwZQd7QZWydk18puqJq5CQ3wmv__gDdeI2_ykD0TYxUKzZl9L8EUb9O0NZ8-cVqXQhFi4etB5d87BpZO-epX9CR9wHeJOWR6GRpGvMuDv4TPCmqR-JckE5lUfN6HoTDZM98NCGJX7v7FEHyV2GRJpGajzT74zXaMyQT_d8sxqyW8BIrukRuoNuSGxA"
 ```
 
+> **A partir daqui, todas as requisições necessitam de um token de autenticação**
+
+## Logout
+
+Para registrar um logout de um usuário, deve-se enviar uma requisição do tipo `POST` para http://localhost/api/logout.
+
+- Response
+
+A resposta deve ser um JSON contendo um atributo `message` com uma mensagem de sucesso
+
+```json
+"message": "Successfully logged out"
+```
+
+## Validar token de sessão
+
+Para validar um token de sessão, deve-se enviar uma requisição do tipo `GET` para http://localhost/api/validateToken.
+
+- Response
+
+A resposta deve ser um JSON contendo um atributo `message` com uma mensagem de *true* ou *false*
+
+```json
+"message": "true"
+```
+
 ------------------------------------------------------
 
 # Requisições de usuários
 
-> A partir desse ponto, todas as requisições necessitam de um token válido no atributo de Authorization, semelhante ao citado no início dessa documentação.
+Essas são requisições que podem ser feitas apenas por administradores, e servem para gerenciar os usuários do sistema.
 
 ## Listar todos os usuários
 
-`GET` para http://localhost/api/admin/users
+`GET` para http://localhost/api/admin/manageUsers/users
 
 - Response
 
@@ -114,7 +154,7 @@ A resposta deve conter um JSON com informações de todos os usuários cadastrad
 
 ## Listar um usuário específico
 
-`GET` para http://localhost/api/admin/users/{id}
+`GET` para http://localhost/api/admin/manageUsers/user/{id}
 
 - Response
 
@@ -133,7 +173,7 @@ A resposta deve conter um JSON com informações do usuário com o id especifica
 
 ## Atualizar um usuário
 
-`PUT` para http://localhost/api/admin/users/{id}
+`PUT` para http://localhost/api/admin/manageUsers/user/{id}
 
 A requisição deve conter um JSON com os campos a serem alterados:
 
@@ -165,7 +205,7 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 
 ## Deletar um usuário
 
-`DELETE` para http://localhost/api/admin/users/{id}
+`DELETE` para http://localhost/api/admin/manageUsers/user/{id}
 
 - Response
 
@@ -177,9 +217,11 @@ A resposta deve conter um JSON com uma mensagem indicando que o usuário foi del
 }
 ```
 
----
+------------------------------------------------------
 
 # Requisições de ponto
+
+As requisições de ponto são dividias em *user* e *admin*. As requisições de usuários indicam que a requisição em questão é feita pelo e para o próprio usuário, já as requisicões de admin indicam que a requisição é feita por um administrador, para qualquer usuário. Requisições de administradores permitem a edição direta dos registros de ponto de usuários.
 
 ## Bater o ponto
 
