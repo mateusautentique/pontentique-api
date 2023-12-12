@@ -21,6 +21,7 @@ use App\Http\Controllers\ClockController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/validateToken', [AuthController::class, 'validateToken']);
 
 Route::middleware('auth:api')->group(function () {
     //User routes

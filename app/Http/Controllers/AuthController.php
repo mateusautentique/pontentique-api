@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Passport\HasApiTokens;
 use App\Models\User;
 
@@ -59,5 +58,12 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function validateToken(Request $request)
+    {
+        return Auth::guard('api')->check()
+            ? response(['message' => true], 200)
+            : response(['message' => false], 422);
     }
 }
