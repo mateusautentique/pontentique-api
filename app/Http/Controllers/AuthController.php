@@ -69,7 +69,7 @@ class AuthController extends Controller
         }
     }
 
-    public function validateToken(Request $request)
+    public function validateToken()
     {
         return Auth::guard('api')->check()
             ? response(['message' => true], 200)

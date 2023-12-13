@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('cpf')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('role')->default('user');
+            $table->enum('role', ['user', 'admin'])->default('user');
+            $table->integer('work_journey_hours')->default(8);
             $table->rememberToken();
             $table->timestamps();
         });

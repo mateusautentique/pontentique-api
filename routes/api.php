@@ -23,6 +23,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
+Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
+
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -31,6 +33,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
         Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);
         Route::post('/calculateHours', [ClockController::class, 'calculateHoursWorkedByPeriod']);
+        Route::post('/calculateBalance', [ClockController::class, 'calculateTotalBalanceOfHours']);
     });
 
     Route::prefix('admin')->group(function () {
