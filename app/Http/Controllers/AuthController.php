@@ -24,7 +24,7 @@ class AuthController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response([
                 'message' => 'Validation failed',
-                'error' => $e->errors()
+                'errors' => $e->errors()
             ], 422);
         }
 
@@ -52,7 +52,7 @@ class AuthController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response([
                 'message' => 'CPF ou senha inválidos',
-                'error' => $e->errors()
+                'errors' => $e->errors()
             ], 422);
         }
 
