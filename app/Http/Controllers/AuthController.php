@@ -62,10 +62,12 @@ class AuthController extends Controller
                 $token = $user->createToken('userToken')->accessToken;
                 return response(['token' => $token], 200);
             } else {
-                return response(['error' => 'Usuário ou senha incorretos'], 422);
+                return response(['error' => 'Usuário ou senha incorretos'], 401);
             }
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response([
+                'message' => $e->getMessage(), 
+            ], 500);
         }
     }
 
@@ -73,7 +75,7 @@ class AuthController extends Controller
     {
         return Auth::guard('api')->check()
             ? response(['message' => true], 200)
-            : response(['message' => false], 422);
+            : response(['message' => false], 401);
     }
 
     public function logout(Request $request)
