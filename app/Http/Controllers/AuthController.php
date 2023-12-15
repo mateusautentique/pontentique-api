@@ -98,4 +98,18 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function getUserInfo()
+    {
+        $user = Auth::user();
+
+        if ($user) {
+            return response()->json([
+                'id' => $user->id,
+                'user_name' => $user->name,
+            ]);
+        } else {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+    }
 }

@@ -117,6 +117,22 @@ A resposta deve ser um JSON contendo um atributo `message` com uma mensagem de *
 "message": "true"
 ```
 
+## Buscar usuário logado
+
+Para buscar o usuário logado, deve-se enviar uma requisição do tipo `GET` para http://localhost/api/user.
+
+- Response
+
+A resposta deve ser um JSON contendo um atributo `id` com o id do usuário, e um atributo `user_name` com o nome do usuário
+
+```json
+{
+    "id": "1",
+    "user_name": "Jair Teste da Silva"
+}
+
+```
+
 ------------------------------------------------------
 
 # Requisições de usuários

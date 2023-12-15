@@ -23,12 +23,13 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
-Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
+//Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::prefix('user')->group(function () {
+        Route::get('/', [AuthController::class, 'getUserInfo']);
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
         Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
         Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);
