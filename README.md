@@ -402,6 +402,8 @@ A resposta contém um JSON com diversas informações sobre os pontos do usuári
 
 Os campos representam:
 
+- `user_name`: Nome do usuário.
+- `user_id`: Id do usuário.
 - `total_hours_worked`: Tempo total trabalhado no período.
 - `total_normal_hours_worked`: Tempo total trabalhado no período, desconsiderando horas extras.
 - `total_hour_balance`: Banco de horas resultante do período.
@@ -409,8 +411,6 @@ Os campos representam:
 - `entries`: Lista de dias com pontos registrados no período.
 
     - `day`: Dia em que os pontos foram registrados.
-    - `user_name`: Nome do usuário.
-    - `user_id`: Id do usuário.
     - `normal_hours_worked_on_day`: Horas normais trabalhadas no dia.
     - `extra_hours_worked_on_day`: Horas extras trabalhadas no dia.
     - `total_time_worked_in_seconds`: Tempo total trabalhado no dia, em segundos.

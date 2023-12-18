@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use App\Models\ClockEvent;
 use Carbon\Carbon;
 
@@ -30,9 +31,9 @@ class ClockController extends Controller
     {
         try {
             $query = $this->validateDataIntoQuery($request);
-
+    
             $workJourneyHours = $request['work_journey_hours'] ?? 8;
-
+    
             $clockEvents = $query->orderBy('timestamp', 'asc')->get()
                 ->groupBy(function ($event) {
                     return $event->timestamp->format('Y-m-d');
@@ -47,14 +48,12 @@ class ClockController extends Controller
                             'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
                         ];
                     });
-
+    
                     $totalTimeWorked < 28800 ? $extraHoursInSec = 0 : $extraHoursInSec = $totalTimeWorked % 28800;
                     $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
-
+    
                     return [
                         'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
-                        'user_id' => $eventsForDate->first()->user->id,
-                        'user_name' => $eventsForDate->first()->user->name,
                         'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
                         'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
                         'total_time_worked_in_seconds' => $totalTimeWorked,
@@ -62,13 +61,17 @@ class ClockController extends Controller
                         'events' => $events,
                     ];
                 });
-
+    
             $totalTimeWorkedInSeconds = $clockEvents->sum('total_time_worked_in_seconds');
             $totalNormalHours = $clockEvents->map(function ($clockEvent) {
                 return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
             })->sum();
-
+    
+            $user = Auth::user();
+    
             return response()->json([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
                 'total_hours_worked' => $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
                 'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
                 'total_hour_balance' => $this->calculateBalanceOfHours(
