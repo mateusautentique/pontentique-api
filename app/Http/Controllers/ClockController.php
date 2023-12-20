@@ -17,7 +17,7 @@ class ClockController extends Controller
         try {
             $clockEvent = ClockEvent::create([
                 'user_id' => $request->input('user_id'),
-                'timestamp' => now(),
+                'timestamp' => Carbon::now(),
             ]);
 
             return response()->json(['message' => 'Clock event registered successfully at ' . $clockEvent->timestamp]);
@@ -31,14 +31,14 @@ class ClockController extends Controller
     {
         try {
             $query = $this->validateDataIntoQuery($request);
-    
+
             $workJourneyHours = $request['work_journey_hours'] ?? 8;
-    
+
             $clockEvents = $query->orderBy('timestamp', 'asc')->get()
                 ->groupBy(function ($event) {
                     return $event->timestamp->format('Y-m-d');
                 })
-                ->map(function ($eventsForDate) {
+                ->map(function ($eventsForDate) use ($workJourneyHours) {
                     $totalTimeWorked = $this->calculateTotalTimeWorked($eventsForDate);
                     $events = $eventsForDate->map(function ($event, $index) {
                         return [
@@ -48,27 +48,32 @@ class ClockController extends Controller
                             'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
                         ];
                     });
-    
+
                     $totalTimeWorked < 28800 ? $extraHoursInSec = 0 : $extraHoursInSec = $totalTimeWorked % 28800;
                     $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
-    
+
                     return [
                         'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
                         'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
                         'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
+                        'balance_hours_on_day' => $this->calculateBalanceOfHours(
+                            $workJourneyHours,
+                            $totalTimeWorked / 3600,
+                            1
+                        ),
                         'total_time_worked_in_seconds' => $totalTimeWorked,
                         'event_count' => $eventsForDate->count(),
                         'events' => $events,
                     ];
                 });
-    
+
             $totalTimeWorkedInSeconds = $clockEvents->sum('total_time_worked_in_seconds');
             $totalNormalHours = $clockEvents->map(function ($clockEvent) {
                 return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
             })->sum();
-    
+
             $user = Auth::user();
-    
+
             return response()->json([
                 'user_id' => $user->id,
                 'user_name' => $user->name,
@@ -95,10 +100,22 @@ class ClockController extends Controller
 
     public function getAllUserClockEntries(Request $request)
     {
-        $clockEvents = ClockEvent::where('user_id', $request->user()->id)
-            ->orderBy('timestamp', 'desc')
-            ->get();
-        return response()->json($clockEvents);
+        try {
+            $clockEvents = ClockEvent::where('user_id', $request->user()->id)
+                ->orderBy('timestamp', 'desc')
+                ->get()
+                ->map(function ($clockEvent) {
+                    $clockEvent->timestamp = $clockEvent->timestamp->format('Y-m-d H:i:s');
+                    $clockEvent->created_at = $clockEvent->created_at->format('Y-m-d H:i:s');
+                    $clockEvent->updated_at = $clockEvent->updated_at->format('Y-m-d H:i:s');
+                    return $clockEvent;
+                });
+    
+            return response()->json($clockEvents);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => 'An error occurred'], 500);
+        }
     }
 
     public function deleteClockEntry(Request $request)
@@ -198,17 +215,17 @@ class ClockController extends Controller
     private function calculateTotalTimeWorked($eventsForDate)
     {
         $totalTimeWorked = 0;
-    
+
         for ($i = 0, $count = count($eventsForDate); $i < $count; $i += 2) {
             $clockInEvent = $eventsForDate[$i];
             $clockOutEvent = $eventsForDate[$i + 1] ?? null;
-    
+
             if ($clockOutEvent) {
                 $timeWorked = $clockInEvent->timestamp->diffInSeconds($clockOutEvent->timestamp);
                 $totalTimeWorked += $timeWorked;
             }
         }
-    
+
         return $totalTimeWorked;
     }
 
@@ -217,7 +234,7 @@ class ClockController extends Controller
         $clockEventsGroupedByDay = $clockEvents->groupBy(function ($date) {
             return Carbon::parse($date->timestamp)->format('Y-m-d');
         });
-    
+
         return $clockEventsGroupedByDay->map(function ($eventsForDate) {
             return $this->calculateTotalTimeWorked($eventsForDate);
         });
@@ -232,17 +249,17 @@ class ClockController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
         ]);
-    
+
         $userId = $validatedData['user_id'];
         $startDate = $validatedData['start_date'] ?? Carbon::minValue();
         $endDate = $validatedData['end_date'] ?? Carbon::now();
-    
+
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
-    
+
         return ClockEvent::where('user_id', $userId)
-                         ->with('user')
-                         ->whereBetween('timestamp', [$startDate, $endDate]);
+            ->with('user')
+            ->whereBetween('timestamp', [$startDate, $endDate]);
     }
 
     private function calculateBalanceOfHours($workJourneyHours, $totalTimeWorked, $daysWorked)

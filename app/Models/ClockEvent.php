@@ -19,6 +19,8 @@ class ClockEvent extends Model
         'timestamp' => 'datetime',
     ];
 
+    protected $dates = ['timestamp'];
+
     public function user()
     {
         return $this->belongsTo(User::class);

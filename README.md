@@ -367,6 +367,7 @@ A resposta contém um JSON com diversas informações sobre os pontos do usuári
             "user_id": 1,
             "normal_hours_worked_on_day": "8:00",
             "extra_hours_worked_on_day": "5:51",
+            "balance_hours_on_day": "5:51",
             "total_time_worked_in_seconds": 49836,
             "event_count": 4,
             "events": [
