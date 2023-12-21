@@ -22,12 +22,12 @@ class AuthController extends Controller
                 'password' => 'required|string|min:5|confirmed',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = collect($e->errors())->flatten()->implode(' ');
             return response([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'message' => 'Erro de validação: ' . $errors
             ], 422);
         }
-
+    
         try {
             $request['password'] = Hash::make($request['password']);
             $user = User::create($request->all());
@@ -37,7 +37,7 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-
+    
         $token = $user->createToken('userToken')->accessToken;
         return response(['token' => $token], 200);
     }
