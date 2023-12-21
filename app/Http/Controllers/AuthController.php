@@ -22,9 +22,9 @@ class AuthController extends Controller
                 'password' => 'required|string|min:5|confirmed',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            $errors = collect($e->errors())->flatten()->implode(' ');
+            $firstError = collect($e->errors())->flatten()->first();
             return response([
-                'message' => 'Erro de validação: ' . $errors
+                'message' => $firstError
             ], 422);
         }
     
