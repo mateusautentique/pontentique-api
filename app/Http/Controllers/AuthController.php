@@ -17,7 +17,7 @@ class AuthController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|max:255',
-                'cpf' => 'required|string|unique:users',
+                'cpf' => 'required|string|size:11|unique:users',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:5|confirmed',
             ]);
@@ -46,7 +46,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'cpf' => 'required|string',
+                'cpf' => 'required|size:11|string',
                 'password' => 'required|string|min:5',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
