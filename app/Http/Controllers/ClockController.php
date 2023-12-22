@@ -103,13 +103,7 @@ class ClockController extends Controller
         try {
             $clockEvents = ClockEvent::where('user_id', $request->user()->id)
                 ->orderBy('timestamp', 'desc')
-                ->get()
-                ->map(function ($clockEvent) {
-                    $clockEvent->timestamp = $clockEvent->timestamp->format('Y-m-d H:i:s');
-                    $clockEvent->created_at = $clockEvent->created_at->format('Y-m-d H:i:s');
-                    $clockEvent->updated_at = $clockEvent->updated_at->format('Y-m-d H:i:s');
-                    return $clockEvent;
-                });
+                ->get();
     
             return response()->json($clockEvents);
         } catch (\Exception $e) {
@@ -162,15 +156,19 @@ class ClockController extends Controller
         try {
             $validatedData = $request->validate([
                 'id' => 'required',
-                'timestamp' => 'required',
+                'timestamp' => 'required|date_format:"Y-m-d H:i:s"',
                 'justification' => 'required',
             ]);
-
+    
             $clockEvent = ClockEvent::find($validatedData['id']);
-
+    
             if ($clockEvent) {
+                $timestamp = Carbon::createFromFormat('Y-m-d H:i:s', $validatedData['timestamp'], 'America/Sao_Paulo');
+                $timestamp->subHours(3);
+                $validatedData['timestamp'] = $timestamp->setTimezone('UTC')->format('Y-m-d\TH:i:s.u\Z');
+    
                 $clockEvent->update($validatedData);
-
+    
                 return response()->json(['message' => 'Clock entry updated successfully to ' . $clockEvent['timestamp'] . ' with justification: ' . $clockEvent['justification']]);
             } else {
                 return response()->json(['message' => 'Clock entry not found'], 404);
