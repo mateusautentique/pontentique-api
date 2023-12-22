@@ -17,5 +17,6 @@ return [
     'confirmed' => 'A confirmação de :attribute não corresponde.',
     'attributes' => [
         'password' => 'senha',
+        'name' => 'nome',
     ],
 ];
