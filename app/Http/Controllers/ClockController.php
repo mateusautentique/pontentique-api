@@ -20,10 +20,10 @@ class ClockController extends Controller
                 'timestamp' => Carbon::now(),
             ]);
 
-            return response()->json(['message' => 'Clock event registered successfully at ' . $clockEvent->timestamp]);
+            return response()->json(['message' => 'Entrada registrada com sucesso em ' . $clockEvent->timestamp]);
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'Failed to register clock event'], 500);
+            return response()->json(['message' => 'Erro ao registrar a entrada'], 500);
         }
     }
 
@@ -108,7 +108,7 @@ class ClockController extends Controller
             return response()->json($clockEvents);
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'An error occurred'], 500);
+            return response()->json(['message' => 'Ocorreu um erro'], 500);
         }
     }
 
@@ -123,13 +123,13 @@ class ClockController extends Controller
 
             if ($clockEvent) {
                 $clockEvent->delete();
-                return response()->json(['message' => 'Clock entry deleted successfully']);
+                return response()->json(['message' => 'Entrada deletada com sucesso']);
             } else {
-                return response()->json(['message' => 'Clock entry not found'], 404);
+                return response()->json(['message' => 'Entrada não encontrada'], 404);
             }
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'Failed to delete clock entry'], 500);
+            return response()->json(['message' => 'Erro ao atualizar a entrada'], 500);
         }
     }
 
@@ -144,10 +144,10 @@ class ClockController extends Controller
 
             $clockEvent = ClockEvent::create($validatedData);
 
-            return response()->json(['message' => 'Clock entry inserted successfully at ' . $clockEvent['timestamp'] . ' with id ' . $clockEvent['id'], 'id' => $clockEvent['id'] ?? '']);
+            return response()->json(['message' => 'Entrada inserida com sucesso em ' . $clockEvent['timestamp'] . ' com id ' . $clockEvent['id'], 'id' => $clockEvent['id'] ?? '']);
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'Failed to insert clock entry'], 500);
+            return response()->json(['message' => 'Erro ao inserir a entrada'], 500);
         }
     }
 
@@ -169,13 +169,13 @@ class ClockController extends Controller
     
                 $clockEvent->update($validatedData);
     
-                return response()->json(['message' => 'Clock entry updated successfully to ' . $clockEvent['timestamp'] . ' with justification: ' . $clockEvent['justification']]);
+                return response()->json(['message' => 'Entrada atualizada com sucesso para ' . $clockEvent['timestamp'] . ' com a justificativa: ' . $clockEvent['justification']]);
             } else {
-                return response()->json(['message' => 'Clock entry not found'], 404);
+                return response()->json(['message' => 'Entrada não encontrada'], 404);
             }
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'Failed to update clock entry'], 500);
+            return response()->json(['message' => 'Erro ao atualizar a entrada'], 500);
         }
     }
 
@@ -183,7 +183,7 @@ class ClockController extends Controller
     {
         ClockEvent::truncate();
 
-        return response()->json(['message' => 'All clock entries deleted successfully']);
+        return response()->json(['message' => 'Todas as entradas foram deletadas com sucesso']);
     }
 
     //HOUR CALCULATION
@@ -203,10 +203,10 @@ class ClockController extends Controller
                 'total_money_earned' => number_format((array_sum($totalHoursWorkedPerDay) / 3600) * $hourRate, 2),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Invalid input'], 400);
+            return response()->json(['message' => 'Entrada inválida'], 400);
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['message' => 'An error occurred'], 500);
+            return response()->json(['message' => 'Ocorreu um erro'], 500);
         }
     }
 
