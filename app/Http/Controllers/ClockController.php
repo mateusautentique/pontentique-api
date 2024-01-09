@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ClockEvent;
 use Carbon\Carbon;
+use DateInterval;
+use DatePeriod;
 
 class ClockController extends Controller
 {
@@ -72,6 +74,30 @@ class ClockController extends Controller
                 return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
             })->sum();
 
+            $startDate = Carbon::parse($request['start_date']);
+            $endDate = Carbon::parse($request['end_date'])->startOfDay();
+    
+            $dateRange = collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate->addDay()));
+            
+            foreach ($dateRange as $date) {
+                $formattedDate = $date->format('Y-m-d');
+                if (!(isset($clockEvents[$formattedDate]))) {
+                    $clockEvents[$formattedDate] = [
+                        'day' => $formattedDate,
+                        'normal_hours_worked_on_day' => '0:00',
+                        'extra_hours_worked_on_day' => '0:00',
+                        'balance_hours_on_day' => '-8:00',
+                        'total_time_worked_in_seconds' => 0,
+                        'event_count' => 0,
+                        'events' => [],
+                    ];
+                }
+            }
+
+            $clockEvents = $clockEvents->sortBy(function ($key) {
+                return $key;
+            });
+
             $user = Auth::user();
 
             return response()->json([
@@ -82,9 +108,7 @@ class ClockController extends Controller
                 'total_hour_balance' => $this->calculateBalanceOfHours(
                     $workJourneyHours,
                     $totalTimeWorkedInSeconds / 3600,
-                    $clockEvents->filter(function ($event) {
-                        return $event['event_count'] >= 2;
-                    })->count()
+                    $clockEvents->count()
                 ),
                 'entries' => $clockEvents->values(),
             ]);
