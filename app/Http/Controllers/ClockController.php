@@ -37,52 +37,58 @@ class ClockController extends Controller
             $workJourneyHours = $request['work_journey_hours'] ?? 8;
 
             $clockEvents = $query->orderBy('timestamp', 'asc')->get()
-                ->groupBy(function ($event) {
-                    return $event->timestamp->format('Y-m-d');
-                })
-                ->map(function ($eventsForDate) use ($workJourneyHours) {
-                    $totalTimeWorked = $this->calculateTotalTimeWorked($eventsForDate);
-                    $events = $eventsForDate->map(function ($event, $index) {
-                        return [
-                            'id' => $event->id,
-                            'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
-                            'justification' => $event->justification,
-                            'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
-                        ];
-                    });
-
-                    $totalTimeWorked < 28800 ? $extraHoursInSec = 0 : $extraHoursInSec = $totalTimeWorked % 28800;
-                    $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
-
+            ->groupBy(function ($event) {
+                return $event->timestamp->format('Y-m-d');
+            })
+            ->map(function ($eventsForDate) use ($workJourneyHours) {
+                $totalTimeWorked = $this->calculateTotalTimeWorked($eventsForDate);
+                $events = $eventsForDate->map(function ($event, $index) {
                     return [
-                        'day' => $eventsForDate->first()->timestamp->format('Y-m-d'),
-                        'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
-                        'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
-                        'balance_hours_on_day' => $this->calculateBalanceOfHours(
-                            $workJourneyHours,
-                            $totalTimeWorked / 3600,
-                            1
-                        ),
-                        'total_time_worked_in_seconds' => $totalTimeWorked,
-                        'event_count' => $eventsForDate->count(),
-                        'events' => $events,
+                        'id' => $event->id,
+                        'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
+                        'justification' => $event->justification,
+                        'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
                     ];
                 });
+        
+                $day = $eventsForDate->first()->timestamp;
+                $isWeekend = $day->isWeekend();
+                $workJourneyHoursForDay = $isWeekend ? 0 : $workJourneyHours;
+
+                $workHoursInSeconds = $workJourneyHoursForDay * 3600;
+        
+                $totalTimeWorked < $workHoursInSeconds ? $extraHoursInSec = 0 : $extraHoursInSec = $totalTimeWorked % $workHoursInSeconds;
+                $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
+
+                return [
+                    'day' => $day->format('Y-m-d'),
+                    'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
+                    'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
+                    'balance_hours_on_day' => $this->calculateBalanceOfHours(
+                        $workJourneyHoursForDay,
+                        $totalTimeWorked / 3600,
+                        1
+                    ),
+                    'total_time_worked_in_seconds' => $totalTimeWorked,
+                    'event_count' => $eventsForDate->count(),
+                    'events' => $events,
+                ];
+            });
 
             $totalTimeWorkedInSeconds = $clockEvents->sum('total_time_worked_in_seconds');
             $totalNormalHours = $clockEvents->map(function ($clockEvent) {
                 return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
             })->sum();
 
-            $startDate = Carbon::parse($request['start_date']);
-            $endDate = Carbon::parse($request['end_date'])->startOfDay();
-    
-            $dateRange = collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate->addDay()));
+            $startDate = Carbon::parse($request['start_date'])->startOfDay();
+            $endDate = Carbon::parse($request['end_date'])->endOfDay();
+            $dateRange = collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate));
             
             foreach ($dateRange as $date) {
+                $date = Carbon::instance($date);
                 $formattedDate = $date->format('Y-m-d');
                 if (!(isset($clockEvents[$formattedDate]))) {
-                    $clockEvents[$formattedDate] = [
+                    $eventData = [
                         'day' => $formattedDate,
                         'normal_hours_worked_on_day' => '0:00',
                         'extra_hours_worked_on_day' => '0:00',
@@ -91,15 +97,21 @@ class ClockController extends Controller
                         'event_count' => 0,
                         'events' => [],
                     ];
+                    if ($date->isWeekend()) {
+                        $eventData['balance_hours_on_day'] = '0:00';
+                    }
+                    $clockEvents->put($formattedDate, $eventData);
                 }
             }
 
             $clockEvents = $clockEvents->sortBy(function ($key) {
                 return $key;
             });
-
             $user = Auth::user();
-
+            $weekdayClockEvents = $clockEvents->filter(function ($event, $date) {
+                return !Carbon::parse($date)->isWeekend();
+            });
+            
             return response()->json([
                 'user_id' => $user->id,
                 'user_name' => $user->name,
@@ -108,7 +120,7 @@ class ClockController extends Controller
                 'total_hour_balance' => $this->calculateBalanceOfHours(
                     $workJourneyHours,
                     $totalTimeWorkedInSeconds / 3600,
-                    $clockEvents->count()
+                    $weekdayClockEvents->count()
                 ),
                 'entries' => $clockEvents->values(),
             ]);
@@ -271,14 +283,14 @@ class ClockController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
         ]);
-
+    
         $userId = $validatedData['user_id'];
         $startDate = $validatedData['start_date'] ?? Carbon::minValue();
         $endDate = $validatedData['end_date'] ?? Carbon::now();
-
+    
         $startDate = Carbon::parse($startDate);
-        $endDate = Carbon::parse($endDate);
-
+        $endDate = Carbon::parse($endDate)->endOfDay();
+    
         return ClockEvent::where('user_id', $userId)
             ->with('user')
             ->whereBetween('timestamp', [$startDate, $endDate]);
