@@ -268,7 +268,7 @@ class ClockController extends Controller
 
     private function convertDecimalToTime($hoursDecimal)
     {
-        $hours = floor($hoursDecimal);
+        $hours = intval($hoursDecimal);
         $decimalHours = abs($hoursDecimal - $hours);
         $minutes = round($decimalHours * 60);
         return sprintf("%d:%02d", $hours, $minutes);
