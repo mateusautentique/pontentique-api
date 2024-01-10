@@ -309,6 +309,12 @@ class ClockController extends Controller
         $hours = intval($hoursDecimal);
         $decimalHours = abs($hoursDecimal - $hours);
         $minutes = round($decimalHours * 60);
+    
+        if ($minutes == 60) {
+            $hours += 1;
+            $minutes = 0;
+        }
+    
         return sprintf("%d:%02d", $hours, $minutes);
     }
 
