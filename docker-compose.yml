@@ -4,7 +4,7 @@ services:
             context: ./vendor/laravel/sail/runtimes/8.2
             dockerfile: Dockerfile
             args:
-                WWWGROUP: '${WWWGROUP}'
+                WWWGROUP: '${WWWGROUP:-20}'
         image: sail-8.2/app
         extra_hosts:
             - 'host.docker.internal:host-gateway'
@@ -23,6 +23,7 @@ services:
             - sail
         depends_on:
             - mysql
+        command: ["sail", "/var/www/html/start.sh"]
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
