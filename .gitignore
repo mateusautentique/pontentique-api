@@ -18,8 +18,11 @@ yarn-error.log
 /.idea
 /.vscode
 
-!/vendor
-!/vendor/laravel
-!/vendor/laravel/sail
-!/vendor/laravel/sail/runtimes
-!/vendor/laravel/sail/runtimes/8.2
+/vendor/*
+!/vendor/laravel/
+/vendor/laravel/*
+!/vendor/laravel/sail/
+/vendor/laravel/sail/*
+!/vendor/laravel/sail/runtimes/
+/vendor/laravel/sail/runtimes/*
+!/vendor/laravel/sail/runtimes/8.2/
