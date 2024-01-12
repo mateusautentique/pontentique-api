@@ -303,7 +303,7 @@ Essa função possui o intuito de ser uma ferramenta geral para a apuração de 
 
 O body da requisição deve conter um campo "user_id", que representa o id do usuário, e dois campos adicionais: "start_date" e "end_date" (no formato "YYYY-MM-DD"), que representam o início e o fim do período que se deseja consultar.
 
-Ambos os campos são opcionais, e adiconam um fator dinâmico à função. Caso apenas o campo "start_date" não seja especificado, o período de consulta será de todos os dias até a data especificada no campo "end_date". Caso apenas o campo "end_date" não seja especificado, o período de consulta será de todos os dias a partir da data especificada no campo "start_date", até o dia atual. Caso nenhum dos dois campos seja especificado, o período de consulta será de todos os dias.
+Ambos os campos são opcionais, e adiconam um fator dinâmico à função. Caso apenas o campo "start_date" não seja especificado, o período de consulta será do momento em que o usuário selecionado foi criado até a data especificada no campo "end_date". Caso apenas o campo "end_date" não seja especificado, o período de consulta será de todos os dias a partir da data especificada no campo "start_date", até o dia atual. Caso nenhum dos dois campos seja especificado, o período de consulta será de todos os dias desde a criação do usuário especificado.
 
 Exemplo:
 
