@@ -23,7 +23,6 @@ services:
             - sail
         depends_on:
             - mysql
-        command: ["sail", "/var/www/html/start.sh"]
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
