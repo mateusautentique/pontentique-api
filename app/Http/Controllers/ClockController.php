@@ -248,17 +248,18 @@ class ClockController extends Controller
     private function calculateTotalTimeWorked($eventsForDate)
     {
         $totalTimeWorked = 0;
-
+    
         for ($i = 0, $count = count($eventsForDate); $i < $count; $i += 2) {
             $clockInEvent = $eventsForDate[$i];
             $clockOutEvent = $eventsForDate[$i + 1] ?? null;
-
+    
             if ($clockOutEvent) {
                 $timeWorked = $clockInEvent->timestamp->diffInSeconds($clockOutEvent->timestamp);
+                $timeWorked = max($timeWorked, 60);
                 $totalTimeWorked += $timeWorked;
             }
         }
-
+    
         return $totalTimeWorked;
     }
 
