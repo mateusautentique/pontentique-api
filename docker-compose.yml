@@ -8,6 +8,25 @@ services:
         working_dir: /app
         entrypoint: ["composer", "install", "--ignore-platform-reqs"]
 
+
+    mysql:
+        image: 'mysql/mysql-server:8.0'
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - db_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
     passport:
         build:
             context: .
@@ -36,31 +55,21 @@ services:
             dockerfile: ./infra/php.Dockerfile
         volumes:
             - ./:/var/www/html
-        ports:
-            - 80:80
         depends_on:
             - mysql
             - migrate
-        command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
+        command: ["php-fpm"]
 
-    mysql:
-        image: 'mysql/mysql-server:8.0'
-        ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
-        environment:
-            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
-            MYSQL_ROOT_HOST: '%'
-            MYSQL_DATABASE: '${DB_DATABASE}'
-            MYSQL_USER: '${DB_USERNAME}'
-            MYSQL_PASSWORD: '${DB_PASSWORD}'
+    nginx:
+        build:
+            context: .
+            dockerfile: ./infra/nginx.Dockerfile
         volumes:
-            - db_data:/var/lib/mysql
-        healthcheck:
-            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
+            - ./:/var/www/html
+        ports:
+            - 80:80
+        depends_on:
+            - php
 
 volumes:
     db_data: {}
