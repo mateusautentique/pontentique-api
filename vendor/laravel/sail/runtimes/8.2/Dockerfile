@@ -44,7 +44,6 @@ RUN apt-get update \
     && apt-get install -y yarn \
     && apt-get install -y mysql-client \
     && apt-get install -y postgresql-client-$POSTGRES_VERSION \
-    && apt-get install -y php8.2-json \
     && apt-get -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -58,19 +57,6 @@ COPY start-container /usr/local/bin/start-container
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY php.ini /etc/php/8.2/cli/conf.d/99-sail.ini
 RUN chmod +x /usr/local/bin/start-container
-
-COPY composer.json composer.lock /var/www/html/
-RUN composer install --no-scripts --no-autoloader --no-dev
-
-COPY . /var/www/html
-RUN composer dump-autoload --optimize
-
-RUN npm install
-
-RUN php artisan key:generate
-RUN php artisan migrate
-
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80
 
 EXPOSE 8000
 

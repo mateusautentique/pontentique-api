@@ -7,25 +7,60 @@ services:
             - ./:/app
         working_dir: /app
         entrypoint: ["composer", "install", "--ignore-platform-reqs"]
-    
-    php:
+
+    passport:
         build:
-            context: ./infra
-            dockerfile: php.Dockerfile
+            context: .
+            dockerfile: ./infra/php.Dockerfile
         volumes:
             - ./:/var/www/html
-        ports:
-            - 8080:80
         depends_on:
+            - mysql
             - composer
-        command: php -S
+        entrypoint: ["sh", "-c", "php artisan passport:install && php artisan passport:key --force"]
 
     migrate:
         build:
-            context: ./infra/php.Dockerfile
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: ./infra/php.Dockerfile
         volumes:
             - ./:/var/www/html
         depends_on:
-            - composer
-        command: php artisan migrate
+            - mysql
+            - passport
+        entrypoint: ["sh", "-c", "php artisan migrate"]
+
+    php:
+        build:
+            context: .
+            dockerfile: ./infra/php.Dockerfile
+        volumes:
+            - ./:/var/www/html
+        ports:
+            - 80:80
+        depends_on:
+            - mysql
+            - migrate
+        command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
+
+    mysql:
+        image: 'mysql/mysql-server:8.0'
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - db_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+
+volumes:
+    db_data: {}
