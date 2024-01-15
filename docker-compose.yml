@@ -47,7 +47,6 @@ services:
         depends_on:
             - mysql
             - composer
-            - migrate
         entrypoint: ["sh", "-c", "php artisan passport:install && php artisan passport:key --force"]
 
     php:
