@@ -27,6 +27,17 @@ services:
             timeout: 5s
             retries: 5
 
+    migrate:
+        build:
+            context: .
+            dockerfile: ./infra/php.Dockerfile
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            - mysql
+            - composer
+        entrypoint: ["sh", "-c", "php artisan migrate"]
+
     passport:
         build:
             context: .
@@ -36,18 +47,8 @@ services:
         depends_on:
             - mysql
             - composer
+            - migrate
         entrypoint: ["sh", "-c", "php artisan passport:install && php artisan passport:key --force"]
-
-    migrate:
-        build:
-            context: .
-            dockerfile: ./infra/php.Dockerfile
-        volumes:
-            - ./:/var/www/html
-        depends_on:
-            - mysql
-            - passport
-        entrypoint: ["sh", "-c", "php artisan migrate"]
 
     php:
         build:
@@ -57,7 +58,9 @@ services:
             - ./:/var/www/html
         depends_on:
             - mysql
+            - composer
             - migrate
+            - passport
         command: ["php-fpm"]
 
     nginx:
