@@ -52,5 +52,9 @@ Route::middleware('auth:api')->group(function () {
             Route::put('/user/{id}', [UserController::class, 'updateUser']);
             Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
         });
+
+        Route::prefix('test')->group(function () {
+            Route::post('dayOff', [ClockController::class, 'setDayOffForDay']);
+        });
     });
 });

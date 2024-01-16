@@ -13,7 +13,7 @@ class ClockEvent extends Model
         'user_id',
         'timestamp',
         'justification',
-        'dayOff',
+        'day_off',
         'doctor',
     ];
 

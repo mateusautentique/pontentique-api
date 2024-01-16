@@ -135,27 +135,27 @@ class ClockController extends Controller
         try {
             $validatedData = $request->validate([
                 'user_id' => 'required',
-                'day' => 'required|date',
-                'dayOff' => 'required|boolean',
+                'day' => 'required|date_format:Y-m-d',
+                'day_off' => 'required|boolean',
                 'doctor' => 'required|boolean',
             ]);
-
+    
             $userId = $validatedData['user_id'];
             $day = $validatedData['day'];
-            $dayOff = $validatedData['dayOff'];
+            $dayOff = $validatedData['day_off'];
             $doctor = $validatedData['doctor'];
-
+    
             $clockEvents = ClockEvent::where('user_id', $userId)
                 ->whereDate('timestamp', $day)
                 ->get();
-
+    
             foreach ($clockEvents as $clockEvent) {
                 $clockEvent->update([
-                    'dayOff' => $dayOff,
+                    'day_off' => $dayOff,
                     'doctor' => $doctor,
                 ]);
             }
-
+    
             return response()->json(['message' => 'Folga atualizada com sucesso para o dia ' . $day]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Entrada inválida'], 400);
@@ -171,7 +171,7 @@ class ClockController extends Controller
     {
         try {
             $clockEvents = ClockEvent::where('user_id', $request->user()->id)
-                ->orderBy('timestamp', 'desc')
+                ->orderBy('id', 'desc')
                 ->get();
 
             return response()->json($clockEvents);
@@ -209,11 +209,13 @@ class ClockController extends Controller
                 'user_id' => 'required',
                 'timestamp' => 'required',
                 'justification' => 'required',
+                'day_off' => 'required|boolean',
+                'doctor' => 'required|boolean',
             ]);
 
             $clockEvent = ClockEvent::create($validatedData);
 
-            return response()->json(['message' => 'Entrada inserida com sucesso em ' . $clockEvent['timestamp'] . ' com id ' . $clockEvent['id'], 'id' => $clockEvent['id'] ?? '']);
+            return response()->json(['message' => 'Entrada inserida com sucesso em ' . $clockEvent['timestamp'] . ' com id ' . $clockEvent['id']]);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Erro ao inserir a entrada'], 500);
@@ -225,21 +227,17 @@ class ClockController extends Controller
         try {
             $validatedData = $request->validate([
                 'id' => 'required',
-                'timestamp' => 'required|date_format:"Y-m-d H:i:s"',
+                'timestamp' => 'required',
                 'justification' => 'required',
-                'dayOff' => 'required|boolean',
+                'day_off' => 'required|boolean',
                 'doctor' => 'required|boolean',
             ]);
-
+    
             $clockEvent = ClockEvent::find($validatedData['id']);
-
+    
             if ($clockEvent) {
-                $timestamp = Carbon::createFromFormat('Y-m-d H:i:s', $validatedData['timestamp'], 'America/Sao_Paulo');
-                $timestamp->subHours(3);
-                $validatedData['timestamp'] = $timestamp->setTimezone('UTC')->format('Y-m-d\TH:i:s.u\Z');
-
                 $clockEvent->update($validatedData);
-
+    
                 return response()->json(['message' => 'Entrada atualizada com sucesso para ' . $clockEvent['timestamp'] . ' com a justificativa: ' . $clockEvent['justification']]);
             } else {
                 return response()->json(['message' => 'Entrada não encontrada'], 404);

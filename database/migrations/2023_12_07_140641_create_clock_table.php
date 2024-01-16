@@ -14,7 +14,7 @@ return new class extends Migration
             $table->timestamp('timestamp');
             $table->timestamps();
             $table->string('justification')->nullable();
-            $table->boolean('dayOff')->default(false);
+            $table->boolean('day_off')->default(false);
             $table->boolean('doctor')->default(false);
         });
     }
