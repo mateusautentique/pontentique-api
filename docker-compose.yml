@@ -16,6 +16,7 @@ services:
             MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USERNAME}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
         volumes:
             - ./infra/mysql/db_data:/var/lib/mysql
         healthcheck:
@@ -70,5 +71,6 @@ services:
             - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
         ports:
             - 80:80
+            - ${APP_PORT}:80
         depends_on:
             - php
