@@ -131,6 +131,40 @@ class ClockController extends Controller
         }
     }
 
+    public function setDayOffForDay(Request $request){
+        try {
+            $validatedData = $request->validate([
+                'user_id' => 'required',
+                'day' => 'required|date',
+                'dayOff' => 'required|boolean',
+                'doctor' => 'required|boolean',
+            ]);
+
+            $userId = $validatedData['user_id'];
+            $day = $validatedData['day'];
+            $dayOff = $validatedData['dayOff'];
+            $doctor = $validatedData['doctor'];
+
+            $clockEvents = ClockEvent::where('user_id', $userId)
+                ->whereDate('timestamp', $day)
+                ->get();
+
+            foreach ($clockEvents as $clockEvent) {
+                $clockEvent->update([
+                    'dayOff' => $dayOff,
+                    'doctor' => $doctor,
+                ]);
+            }
+
+            return response()->json(['message' => 'Folga atualizada com sucesso para o dia ' . $day]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Entrada inválida'], 400);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => 'Ocorreu um erro'], 500);
+        }
+    }
+
     //CLOCK CRUD
 
     public function getAllUserClockEntries(Request $request)
@@ -193,6 +227,8 @@ class ClockController extends Controller
                 'id' => 'required',
                 'timestamp' => 'required|date_format:"Y-m-d H:i:s"',
                 'justification' => 'required',
+                'dayOff' => 'required|boolean',
+                'doctor' => 'required|boolean',
             ]);
 
             $clockEvent = ClockEvent::find($validatedData['id']);

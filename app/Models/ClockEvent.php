@@ -12,7 +12,9 @@ class ClockEvent extends Model
     protected $fillable = [
         'user_id',
         'timestamp',
-        'justification'
+        'justification',
+        'dayOff',
+        'doctor',
     ];
 
     protected $casts = [
