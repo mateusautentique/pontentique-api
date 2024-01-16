@@ -6,7 +6,7 @@ services:
         volumes:
             - ./:/app
         working_dir: /app
-        entrypoint: ["composer", "install", "--ignore-platform-reqs"]
+        entrypoint: ["sh", "-c", "composer install --ignore-platform-reqs"]
 
     mysql:
         image: 'mysql/mysql-server:8.0'
@@ -34,7 +34,7 @@ services:
             mysql:
                 condition: service_healthy
             composer:
-                condition: service_started
+                condition: service_completed_successfully
         entrypoint: ["sh", "-c", "php artisan migrate"]
 
     passport:
@@ -47,7 +47,7 @@ services:
             mysql:
                 condition: service_healthy
             migrate:
-                condition: service_started
+                condition: service_completed_successfully
         entrypoint: ["sh", "-c", "php artisan passport:install && php artisan passport:key"]
 
     php:
