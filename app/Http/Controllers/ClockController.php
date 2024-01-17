@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
+use DateTime;
 
 class ClockController extends Controller
 {
@@ -34,54 +35,63 @@ class ClockController extends Controller
     {
         try {
             $query = $this->validateDataIntoQuery($request);
-            $workJourneyHours = $request['work_journey_hours'] ?? 8;
+
+            $workJourneyHoursInSec = $request['work_journey_hours'] ?? 28800;
 
             $clockEvents = $this->groupClockEventsByDate($query)
-                ->map(function ($eventsForDate) use ($workJourneyHours) {
-                    $totalTimeWorked = $this->calculateTotalTimeWorked($eventsForDate);
+                ->map(function ($eventsForDate) use ($workJourneyHoursInSec){
                     $events = $eventsForDate->map(function ($event, $index) {
-                        return $this->mapEvent($event, $index);
+                        return $this->createEventData($event, $index);
                     });
 
-                    list($day, $workJourneyHoursForDay) = $this->calculateDay($eventsForDate, $workJourneyHours);
-                    list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorked, $workJourneyHoursForDay);
+                    $day = $eventsForDate->first()->timestamp;
 
-                    return $this->createEventData(
+                    list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
+                    Log::info('Normal Events:', $normalEvents->toArray());
+                    Log::info('Day Off Events:', $dayOffEvents->toArray());
+                    $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
+                    Log::info('Expected Work Hours On Day:', ['hours' => $expectedWorkHoursOnDay]);
+                    $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
+                    Log::info('Total Time Worked In Sec:', ['time' => ($totalTimeWorkedInSec / 3600)]);
+                    
+                    list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
+                    Log::info('Extra Hours In Sec:', ['hours' => ($extraHoursInSec / 3600)]);
+                    Log::info('Normal Hours In Sec:', ['hours' => ($normalHoursInSec / 3600)]);
+
+                    return $this->createEntryData(
                         $day,
+                        $expectedWorkHoursOnDay,
                         $normalHoursInSec,
                         $extraHoursInSec,
-                        $workJourneyHoursForDay,
-                        $totalTimeWorked,
+                        $totalTimeWorkedInSec,
                         $eventsForDate,
                         $events
                     );
                 });
 
-            list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
-
             $dateRange = $this->getDateRange($request);
-
             foreach ($dateRange as $date) {
                 $date = Carbon::instance($date);
                 $formattedDate = $date->format('Y-m-d');
                 if (!(isset($clockEvents[$formattedDate]))) {
-                    $eventData = $this->createDayData($formattedDate, $date->isWeekend());
+                    $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
                     $clockEvents->put($formattedDate, $eventData);
                 }
             }
 
             $clockEvents = $clockEvents->sortKeys();
             $user = Auth::user();
-            $weekdayClockEvents = $clockEvents->filter(function ($event, $date) {
-                return !Carbon::parse($date)->isWeekend();
-            });
+            list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
+
+            $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
+                return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
+            })->sum();
 
             return response()->json($this->createReportData(
                 $user,
                 $totalTimeWorkedInSeconds,
                 $totalNormalHours,
-                $workJourneyHours,
-                $weekdayClockEvents->count(),
+                $expectedWorkJourneyHoursForPeriod,
                 $clockEvents
             ));
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -219,29 +229,36 @@ class ClockController extends Controller
 
     //HOUR CALCULATION
 
-    private function calculateTotalTimeWorked($eventsForDate)
+    private function calculateTotalTime($event)
     {
-        $totalTimeWorked = 0;
-
-        for ($i = 0, $count = count($eventsForDate); $i < $count; $i += 2) {
-            $clockInEvent = $eventsForDate[$i];
-            $clockOutEvent = $eventsForDate[$i + 1] ?? null;
-
-            if ($clockOutEvent) {
-                $timeWorked = $clockInEvent->timestamp->diffInSeconds($clockOutEvent->timestamp);
-                $timeWorked = max($timeWorked, 60);
-                $totalTimeWorked += $timeWorked;
+        $totalTime = 0;
+    
+        $event->each(function ($item, $index) use (&$totalTime, $event) {
+            if ($index % 2 == 0) {
+                $clockInEvent = $item;
+                $clockOutEvent = $event->get($index + 1);
+    
+                if ($clockOutEvent) {
+                    $clockInTime = \Carbon\Carbon::parse($clockInEvent['timestamp']);
+                    $clockOutTime = \Carbon\Carbon::parse($clockOutEvent['timestamp']);
+                    $timeWorked = $clockInTime->diffInSeconds($clockOutTime);
+                    $timeWorked = max($timeWorked, 60);
+                    $totalTime += $timeWorked;
+                }
             }
-        }
-        return $totalTimeWorked;
+        });
+    
+        return $totalTime;
     }
 
-    private function calculateWorkHours($totalTimeWorked, $workJourneyHoursForDay)
+    private function calculateWorkHours($totalTimeWorked, $workJourneyHoursForDay, $defaultWorkJourneyHours = 8)
     {
-        $workHoursInSeconds = $workJourneyHoursForDay * 3600;
-        $extraHoursInSec = max(0, $totalTimeWorked - $workHoursInSeconds);
-        $normalHoursInSec = $totalTimeWorked - $extraHoursInSec;
-        return [$workHoursInSeconds, $extraHoursInSec, $normalHoursInSec];
+        $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay * 3600);
+        $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
+        if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {
+            $extraHoursInSec = 0;
+        }
+        return [$extraHoursInSec, $normalHoursInSec];
     }
 
     private function calculateTotalTimeAndNormalHours($clockEvents)
@@ -254,10 +271,10 @@ class ClockController extends Controller
         return [$totalTimeWorkedInSeconds, $totalNormalHours];
     }
 
-    private function calculateBalanceOfHours($workJourneyHours, $totalTimeWorked, $daysWorked)
+    private function calculateBalanceOfHours($expectedWorkHoursInSec, $totalTimeWorkedInSec)
     {
-        $balanceOfHours = $totalTimeWorked - ($workJourneyHours * $daysWorked);
-        return $this->convertDecimalToTime($balanceOfHours);
+        $balanceOfHoursInSec = $totalTimeWorkedInSec - $expectedWorkHoursInSec;
+        return $this->convertDecimalToTime($balanceOfHoursInSec);
     }
 
     //UTILS
@@ -331,44 +348,71 @@ class ClockController extends Controller
             });
     }
 
-    private function mapEvent($event, $index)
+    public function separateEvents($events)
+    {
+        $normalEvents = $this->filterEvents($events, false);
+        $dayOffEvents = $this->filterEvents($events, true);
+    
+        return [$normalEvents, $dayOffEvents];
+    }
+    
+    private function filterEvents($events, $isDayOff)
+    {
+        return $events->filter(function ($event) use ($isDayOff) {
+            $isEventDayOff = (bool)$event['day_off'];
+            $isEventDoctor = (bool)$event['doctor'];
+            return $isDayOff ? ($isEventDayOff || $isEventDoctor) : (!$isEventDayOff && !$isEventDoctor);
+        });
+    }
+
+    //RESPONSE CREATION
+
+    private function createEventData($event, $index)
     {
         return [
             'id' => $event->id,
             'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
             'justification' => $event->justification,
             'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
+            'day_off' => $event->day_off,
+            'doctor' => $event->doctor,
         ];
     }
 
-    private function calculateDay($eventsForDate, $workJourneyHours)
-    {
-        $day = $eventsForDate->first()->timestamp;
-        $isWeekend = $day->isWeekend();
-        $workJourneyHoursForDay = $isWeekend ? 0 : $workJourneyHours;
-        return [$day, $workJourneyHoursForDay];
-    }
-
-    //RESPONSE CREATION
-
-    private function createEventData($day, $normalHoursInSec, $extraHoursInSec, $workJourneyHoursForDay, $totalTimeWorked, $eventsForDate, $events)
+    private function createEntryData($day, $expectedWorkHoursOnDay, $normalHoursInSec, $extraHoursInSec, $totalTimeWorkedInSec, $eventsForDate, $events)
     {
         return [
             'day' => $day->format('Y-m-d'),
+            'expected_work_hours_on_day' => $this->convertDecimalToTime($expectedWorkHoursOnDay / 3600),
             'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
             'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
             'balance_hours_on_day' => $this->calculateBalanceOfHours(
-                $workJourneyHoursForDay,
-                $totalTimeWorked / 3600,
-                1
+                $expectedWorkHoursOnDay / 3600,
+                $totalTimeWorkedInSec / 3600
             ),
-            'total_time_worked_in_seconds' => $totalTimeWorked,
+            'total_time_worked_in_seconds' => $totalTimeWorkedInSec,
             'event_count' => $eventsForDate->count(),
             'events' => $events,
         ];
     }
 
-    private function createDayData($formattedDate, $isWeekend)
+    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $expectedWorkJourneyHoursForPeriod, $clockEvents)
+    {
+        return [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'total_expected_hours' => $this->convertDecimalToTime($expectedWorkJourneyHoursForPeriod),
+            'total_hours_worked' =>  $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
+            'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
+            'total_hour_balance' => $this->calculateBalanceOfHours(
+                $expectedWorkJourneyHoursForPeriod,
+                $totalTimeWorkedInSeconds / 3600
+            ),
+            'entries' => $clockEvents->values(),
+        ];
+    }
+
+    private function createDefaultEntryResponse($formattedDate, $isWeekend)
     {
         $eventData = [
             'day' => $formattedDate,
@@ -381,26 +425,5 @@ class ClockController extends Controller
         ];
 
         return $eventData;
-    }
-
-    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $workJourneyHours, $weekdayClockEventsCount, $clockEvents)
-    {
-        $totalHoursWorked = $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600);
-        $totalNormalHoursWorked = $this->convertDecimalToTime($totalNormalHours);
-
-        $responseData = [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'total_hours_worked' => $totalHoursWorked,
-            'total_normal_hours_worked' => $totalNormalHoursWorked,
-            'total_hour_balance' => $this->calculateBalanceOfHours(
-                $workJourneyHours,
-                $totalTimeWorkedInSeconds / 3600,
-                $weekdayClockEventsCount
-            ),
-            'entries' => $clockEvents->values(),
-        ];
-
-        return $responseData;
     }
 }
