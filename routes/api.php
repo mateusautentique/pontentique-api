@@ -29,7 +29,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::prefix('user')->group(function () {
-        Route::get('/', [AuthController::class, 'getUserInfo']);
+        Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
         Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
         Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);

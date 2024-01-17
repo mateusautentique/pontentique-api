@@ -123,12 +123,17 @@ Para buscar o usuário logado, deve-se enviar uma requisição do tipo `GET` par
 
 - Response
 
-A resposta deve ser um JSON contendo um atributo `id` com o id do usuário, e um atributo `user_name` com o nome do usuário
+A resposta deve ser um JSON contendo diversos atributos do usuário logado.
 
 ```json
 {
-    "id": "1",
-    "user_name": "Jair Teste da Silva"
+    "id": 1,
+    "user_name": "Jair Teste da Silva",
+    "user_email": "jairtestetesteteste@tuamaeaquelaursa.com",
+    "user_cpf": "12345678900",
+    "user_role": "user",
+    "user_created_at": "2024-01-16T17:14:58.000000Z",
+    "user_updated_at": "2024-01-16T17:14:58.000000Z"
 }
 
 ```
