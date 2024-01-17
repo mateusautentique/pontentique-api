@@ -10,7 +10,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
-use DateTime;
 
 class ClockController extends Controller
 {
@@ -313,6 +312,20 @@ class ClockController extends Controller
         });
     }
 
+    private function fillMissingDays($request, $clockEvents) {
+        $dateRange = $this->getDateRange($request);
+        foreach ($dateRange as $date) {
+            $date = Carbon::instance($date);
+            $formattedDate = $date->format('Y-m-d');
+            if (!(isset($clockEvents[$formattedDate]))) {
+                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
+                $clockEvents->put($formattedDate, $eventData);
+            }
+        }
+        $clockEvents = $clockEvents->sortKeys();
+        return $clockEvents;
+    }
+
     private function getClockEvents($query, $workJourneyHoursInSec) {
         return $this->groupClockEventsByDate($query)
             ->map(function ($eventsForDate) use ($workJourneyHoursInSec){
@@ -338,20 +351,6 @@ class ClockController extends Controller
                     $events
                 );
             });
-    }
-
-    private function fillMissingDays($request, $clockEvents) {
-        $dateRange = $this->getDateRange($request);
-        foreach ($dateRange as $date) {
-            $date = Carbon::instance($date);
-            $formattedDate = $date->format('Y-m-d');
-            if (!(isset($clockEvents[$formattedDate]))) {
-                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
-                $clockEvents->put($formattedDate, $eventData);
-            }
-        }
-        $clockEvents = $clockEvents->sortKeys();
-        return $clockEvents;
     }
 
     private function generateReport($clockEvents) {
