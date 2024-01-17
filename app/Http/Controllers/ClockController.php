@@ -35,59 +35,13 @@ class ClockController extends Controller
     {
         try {
             $query = $this->validateDataIntoQuery($request);
-
             $workJourneyHoursInSec = $request['work_journey_hours'] ?? 28800;
 
-            $clockEvents = $this->groupClockEventsByDate($query)
-                ->map(function ($eventsForDate) use ($workJourneyHoursInSec){
-                    $events = $eventsForDate->map(function ($event, $index) {
-                        return $this->createEventData($event, $index);
-                    });
+            $clockEvents = $this->getClockEvents($query, $workJourneyHoursInSec);
 
-                    $day = $eventsForDate->first()->timestamp;
+            $clockEvents = $this->fillMissingDays($request, $clockEvents);
 
-                    list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
-                    $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
-                    $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-        
-                    list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
-
-                    return $this->createEntryData(
-                        $day,
-                        $expectedWorkHoursOnDay,
-                        $normalHoursInSec,
-                        $extraHoursInSec,
-                        $totalTimeWorkedInSec,
-                        $eventsForDate,
-                        $events
-                    );
-                });
-
-            $dateRange = $this->getDateRange($request);
-            foreach ($dateRange as $date) {
-                $date = Carbon::instance($date);
-                $formattedDate = $date->format('Y-m-d');
-                if (!(isset($clockEvents[$formattedDate]))) {
-                    $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
-                    $clockEvents->put($formattedDate, $eventData);
-                }
-            }
-
-            $clockEvents = $clockEvents->sortKeys();
-            $user = Auth::user();
-            list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
-
-            $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
-                return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
-            })->sum();
-
-            return response()->json($this->createReportData(
-                $user,
-                $totalTimeWorkedInSeconds,
-                $totalNormalHours,
-                $expectedWorkJourneyHoursForPeriod,
-                $clockEvents
-            ));
+            return response()->json($this->generateReport($clockEvents));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
@@ -357,6 +311,64 @@ class ClockController extends Controller
             $isEventDoctor = (bool)$event['doctor'];
             return $isDayOff ? ($isEventDayOff || $isEventDoctor) : (!$isEventDayOff && !$isEventDoctor);
         });
+    }
+
+    private function getClockEvents($query, $workJourneyHoursInSec) {
+        return $this->groupClockEventsByDate($query)
+            ->map(function ($eventsForDate) use ($workJourneyHoursInSec){
+                $events = $eventsForDate->map(function ($event, $index) {
+                    return $this->createEventData($event, $index);
+                });
+    
+                $day = $eventsForDate->first()->timestamp;
+    
+                list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
+                $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
+                $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
+    
+                list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
+    
+                return $this->createEntryData(
+                    $day,
+                    $expectedWorkHoursOnDay,
+                    $normalHoursInSec,
+                    $extraHoursInSec,
+                    $totalTimeWorkedInSec,
+                    $eventsForDate,
+                    $events
+                );
+            });
+    }
+
+    private function fillMissingDays($request, $clockEvents) {
+        $dateRange = $this->getDateRange($request);
+        foreach ($dateRange as $date) {
+            $date = Carbon::instance($date);
+            $formattedDate = $date->format('Y-m-d');
+            if (!(isset($clockEvents[$formattedDate]))) {
+                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
+                $clockEvents->put($formattedDate, $eventData);
+            }
+        }
+        $clockEvents = $clockEvents->sortKeys();
+        return $clockEvents;
+    }
+
+    private function generateReport($clockEvents) {
+        $user = Auth::user();
+        list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
+    
+        $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
+            return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
+        })->sum();
+    
+        return $this->createReportData(
+            $user,
+            $totalTimeWorkedInSeconds,
+            $totalNormalHours,
+            $expectedWorkJourneyHoursForPeriod,
+            $clockEvents
+        );
     }
 
     //RESPONSE CREATION
