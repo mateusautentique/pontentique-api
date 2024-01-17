@@ -47,16 +47,10 @@ class ClockController extends Controller
                     $day = $eventsForDate->first()->timestamp;
 
                     list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
-                    Log::info('Normal Events:', $normalEvents->toArray());
-                    Log::info('Day Off Events:', $dayOffEvents->toArray());
                     $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
-                    Log::info('Expected Work Hours On Day:', ['hours' => $expectedWorkHoursOnDay]);
                     $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-                    Log::info('Total Time Worked In Sec:', ['time' => ($totalTimeWorkedInSec / 3600)]);
-                    
+        
                     list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
-                    Log::info('Extra Hours In Sec:', ['hours' => ($extraHoursInSec / 3600)]);
-                    Log::info('Normal Hours In Sec:', ['hours' => ($normalHoursInSec / 3600)]);
 
                     return $this->createEntryData(
                         $day,
