@@ -11,7 +11,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'user_id',
-        'clock_events_id',
+        'clock_event_id',
         'type',
         'status',
         'justification',
@@ -42,7 +42,7 @@ class Ticket extends Model
 
     public function deny()
     {
-        $this->update(['status' => 'denied']);
+        $this->update(['status' => 'rejected']);
     }
 
     public function clockEvent()

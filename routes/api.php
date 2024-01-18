@@ -53,7 +53,9 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/', [TicketController::class, 'showAllTickets']);
             Route::get('/active', [TicketController::class, 'showAllActiveTickets']);
             Route::post('/user', [TicketController::class, 'showAllUserTickets']);
-            Route::post('/handle', [TicketController::class, 'handleTicket']);
+            Route::put('/handle', [TicketController::class, 'handleTicket']);
         });
     });
+
+    Route::delete('/test', [TicketController::class, 'dropAllTickets']);
 });

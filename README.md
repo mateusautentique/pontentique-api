@@ -9,6 +9,7 @@ Até o momento, a API possui as seguintes funcionalidades:
 - Relatórios sobre batidas de ponto
 - Cálculo de horas trabalhadas e valor a receber
 - Inserção, atualização e remoção de batidas de ponto manualmente
+- Sistema de tickets, que podem ser aceitos ou não por administradores
 
 Abaixo, estarão listados alguns exemplos de requisições. Todos elas (exceto registro e login) requerem um token de autenticação válido, caso contrário, elas retornam um erro **401** (*Unauthorized*).
 
@@ -540,3 +541,140 @@ Exemplo:
 ```
 
 ---
+
+# Requisições de tickets
+
+As requisic'oes de tickets são divididas em *user* e *admin*. As requisições de usuários indicam que a requisição em questão é feita pelo e para o próprio usuário, já as requisicões de admin indicam que a requisição é feita por um administrador, para qualquer usuário. Esse sistema permite que os usuários enviem tickets para os administradores, que podem aceitá-los ou não.
+
+## Listar todos os tickets ativos
+
+`GET` para http://localhost/api/admin/manageTickets/active
+
+- Response
+
+A resposta contém um JSON com todos os tickets ativos.
+
+Exemplo:
+
+```json
+[
+    {
+        "id": 1,
+        "created_at": "2024-01-18T18:39:31.000000Z",
+        "updated_at": "2024-01-18T18:39:31.000000Z",
+        "user_id": 1,
+        "clock_event_id": null,
+        "type": "create",
+        "status": "pending",
+        "justification": "ticket test",
+        "requested_data": "{\"id\": \"2\", \"doctor\": \"0\", \"day_off\": \"0\", \"user_id\": \"1\", \"timestamp\": \"2024-1-18 10:00:00\", \"justification\": \"ticket test\"}"
+    },
+    {
+        "id": 2,
+        "created_at": "2024-01-18T18:39:34.000000Z",
+        "updated_at": "2024-01-18T18:39:34.000000Z",
+        "user_id": 1,
+        "clock_event_id": null,
+        "type": "create",
+        "status": "pending",
+        "justification": "ticket test",
+        "requested_data": "{\"id\": \"2\", \"doctor\": \"0\", \"day_off\": \"0\", \"user_id\": \"1\", \"timestamp\": \"2024-1-18 18:00:00\", \"justification\": \"ticket test\"}"
+    }
+    ...
+]
+```
+
+## Listar todos os tickets de um usuário
+
+`GET` para http://localhost/api/admin/manageTickets/user
+
+- Body
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário.
+
+- Response
+
+A resposta contém um JSON com todos os tickets do usuário.
+
+Exemplo:
+
+```json
+[
+    {
+        "id": 1,
+        "created_at": "2024-01-18T18:39:31.000000Z",
+        "updated_at": "2024-01-18T18:39:31.000000Z",
+        "user_id": 1,
+        "clock_event_id": null,
+        "type": "create",
+        "status": "pending",
+        "justification": "ticket test",
+        "requested_data": "{\"id\": \"2\", \"doctor\": \"0\", \"day_off\": \"0\", \"user_id\": \"1\", \"timestamp\": \"2024-1-18 10:00:00\", \"justification\": \"ticket test\"}"
+    }
+    ...
+]
+```
+
+## Criar um ticket
+
+`POST` para http://localhost/api/user/tickets
+
+- Body
+
+O body da requisição deve conter um campo "user_id", que representa o id do usuário, um campo type, que representa o tipo do ticket, e um campo "requested_data", que representa os dados requisitados pelo ticket (mesmos valores de um update ou create, contendo um id, caso for um update, um user_id, um timestamp, uma justificativa, e os campos de day_off e doctor), um campo "justification", que representa a justificativa do ticket e um campo "clock_event_id", que representa o id do ponto que o ticket se refere.
+
+No caso de tickets do tipo "delete", o campo requested_data pode ser nulo, e no caso de um "create", o campo clock_event_id pode ser nulo. Tickets de "update" devem conter todos os campos
+
+```json
+{
+    "user_id": "1",
+    "type": "create",
+    "clock_event_id": "2",
+    "justification": "ticket test",
+    "requested_data": {
+        "user_id": "1",
+        "timestamp": "2024-1-18 18:00:00",
+        "justification": "ticket test",
+        "day_off": "0",
+        "doctor": "0"
+    }
+}
+```
+
+> Cria um ticket do tipo "create", para o ponto com id 2, com a justificativa "ticket test", e os dados requisitados sendo os mesmos de um create.
+
+- Response
+
+```json
+{
+    "message": "Ticket criado com sucesso"
+}
+```
+
+## Aprovar ou negar um ticket
+
+`PUT` para http://localhost/api/admin/manageTickets/handle
+
+- Body
+
+O body da requisição deve conter um campo "ticket_id", que representa o id do ticket, e um campo "action", que representa a ação a ser tomada com o ticket. O campo "action" pode ser "approve" ou "deny".
+
+```json
+{
+    "ticket_id": "1",
+    "action": "approve"
+}
+```
+
+> Aprova o ticket com id 1.
+
+- Response
+
+```json
+{
+    "message": "Ticket aprovado com sucesso"
+}
+```
+> Ou então "Ticket negado com sucesso"
+
+------------------------------------------------------

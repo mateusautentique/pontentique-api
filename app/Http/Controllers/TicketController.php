@@ -16,8 +16,9 @@ class TicketController extends Controller
                 ->get();
             return response()->json($tickets);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Invalid input'], 400);
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -44,8 +45,9 @@ class TicketController extends Controller
                 ->get();
             return response()->json($tickets);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Invalid input'], 400);
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -58,6 +60,8 @@ class TicketController extends Controller
             $validationRules = $this->createTicketValidationRules($request->type);
             $request->validate($validationRules);
             return $this->newTicket($request);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
@@ -92,13 +96,17 @@ class TicketController extends Controller
         try {
             Ticket::create([
                 'user_id' => $request->user_id,
-                'clock_id' => $request->type == 'create' ? null : $request->clock_id,
+                'clock_event_id' => $request->type == 'create' ? null : $request->clock_event_id,
                 'status' => 'pending',
                 'type' => $request->type,
                 'justification' => $request->justification,
                 'requested_data' => $request->type == 'delete' ? null : json_encode($request->requested_data),
             ]);
             return response()->json(['message' => 'Ticket criado com sucesso'], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -134,21 +142,27 @@ class TicketController extends Controller
             'user_id' => 'required',
             'type' => 'required',
             'justification' => 'required',
+            'clock_event_id' => 'required',
+            'requested_data' => 'required',
         ];
-    
-        $requestedDataRules = $this->requestedDataValidationRules($type);
-        foreach ($requestedDataRules as $key => $rule) {
-            $rules["requested_data.$key"] = $rule;
-        }
     
         switch ($type) {
             case 'create':
-                $rules['clock_id'] = 'nullable';
+                $rules['clock_event_id'] = 'nullable';
+                $requestedDataRules = $this->requestedDataValidationRules($type);
+                foreach ($requestedDataRules as $key => $rule) {
+                    $rules["requested_data.$key"] = $rule;
+                }
+                $rules['requested_data.id'] = 'nullable';
                 break;
             case 'delete':
                 $rules['requested_data'] = 'nullable';
                 break;
             case 'update':
+                $requestedDataRules = $this->requestedDataValidationRules($type);
+                foreach ($requestedDataRules as $key => $rule) {
+                    $rules["requested_data.$key"] = $rule;
+                }
                 break;
             default:
                 throw new \InvalidArgumentException('Tipo de ticket inválido');
@@ -179,5 +193,17 @@ class TicketController extends Controller
         ];
 
         return $rules;
+    }
+
+    //DEGUB
+    public function dropAllTickets()
+    {
+        try {
+            Ticket::truncate();
+            return response()->json(['message' => 'Tickets deletados com sucesso'], 200);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => 'Ocorreu um erro'], 500);
+        }
     }
 }
