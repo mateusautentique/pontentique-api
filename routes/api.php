@@ -1,12 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClockController;
+use App\Http\Controllers\TicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,10 +29,8 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
-        Route::get('/userEntries', [ClockController::class, 'getAllUserClockEntries']);
         Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);
-        Route::post('/calculateHours', [ClockController::class, 'calculateHoursWorkedByPeriod']);
-        Route::post('/calculateBalance', [ClockController::class, 'calculateTotalBalanceOfHours']);
+        Route::post('/ticket', [TicketController::class, 'createTicket']);
     });
 
     Route::prefix('admin')->group(function () {
@@ -53,8 +49,11 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
         });
 
-        Route::prefix('test')->group(function () {
-            Route::post('dayOff', [ClockController::class, 'setDayOffForDay']);
+        Route::prefix('manageTickets')->group(function () {
+            Route::get('/', [TicketController::class, 'showAllTickets']);
+            Route::get('/active', [TicketController::class, 'showAllActiveTickets']);
+            Route::post('/user', [TicketController::class, 'showAllUserTickets']);
+            Route::post('/handle', [TicketController::class, 'handleTicket']);
         });
     });
 });

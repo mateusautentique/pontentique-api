@@ -15,6 +15,9 @@ class TicketController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->get();
             return response()->json($tickets);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error($e);
+            return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -33,13 +36,16 @@ class TicketController extends Controller
         }
     }
 
-    public function showUserTickets(Ticket $ticket)
+    public function showAllUserTickets(Request $request)
     {
         try {
-            $tickets = Ticket::where('user_id', $ticket->user_id)
+            $tickets = Ticket::where('user_id', $request->user_id)
                 ->orderBy('created_at', 'asc')
                 ->get();
             return response()->json($tickets);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error($e);
+            return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -51,7 +57,9 @@ class TicketController extends Controller
         try {
             $validationRules = $this->createTicketValidationRules($request->type);
             $request->validate($validationRules);
-            $this->newTicket($request);
+            return $this->newTicket($request);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -82,17 +90,15 @@ class TicketController extends Controller
     private function newTicket(Request $request)
     {
         try {
-            $ticket = new Ticket();
-            $ticket->user_id = $request->user_id;
-            $ticket->clock_id = $request->type == 'create' ? null : $request->clock_id;
-            $ticket->status = 'pending';
-            $ticket->type = $request->type;
-            $ticket->justification = $request->justification;
-            $ticket->requested_data = $request->type == 'delete' ? null : $request->requested_data;
-            $ticket->save();
+            Ticket::create([
+                'user_id' => $request->user_id,
+                'clock_id' => $request->type == 'create' ? null : $request->clock_id,
+                'status' => 'pending',
+                'type' => $request->type,
+                'justification' => $request->justification,
+                'requested_data' => $request->type == 'delete' ? null : json_encode($request->requested_data),
+            ]);
             return response()->json(['message' => 'Ticket criado com sucesso'], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);
@@ -102,20 +108,7 @@ class TicketController extends Controller
     private function approveTicket(Ticket $ticket)
     {
         try {
-            $clockController = new ClockController();
-            switch ($ticket->type) {
-                case 'create':
-                    $clockController->insertClockEntry($ticket->requested_data);
-                    break;
-                case 'update':
-                    $clockController->updateClockEntry($ticket->requested_data);
-                    break;
-                case 'delete':
-                    $clockController->deleteClockEntry($ticket->clock_id);
-                    break;
-                $ticket->status = 'approved';
-                $ticket->save();    
-            }
+            $ticket->approve();
             return response()->json(['message' => 'Ticket aprovado com sucesso'], 200);
         } catch (\Exception $e) {
             Log::error($e);
@@ -126,8 +119,7 @@ class TicketController extends Controller
     private function denyTicket(Ticket $ticket)
     {
         try {
-            $ticket->status = 'rejected';
-            $ticket->save();
+            $ticket->deny();
             return response()->json(['message' => 'Ticket negado com sucesso'], 200);
         } catch (\Exception $e) {
             Log::error($e);
@@ -143,24 +135,39 @@ class TicketController extends Controller
             'type' => 'required',
             'justification' => 'required',
         ];
-
+    
+        $requestedDataRules = $this->requestedDataValidationRules($type);
+        foreach ($requestedDataRules as $key => $rule) {
+            $rules["requested_data.$key"] = $rule;
+        }
+    
         switch ($type) {
-            case 'update':
-                $rules['clock_id'] = 'required';
-                $rules['requested_data'] = 'required';
-                break;
             case 'create':
                 $rules['clock_id'] = 'nullable';
-                $rules['requested_data'] = 'required';
                 break;
             case 'delete':
-                $rules['clock_id'] = 'required';
                 $rules['requested_data'] = 'nullable';
+                break;
+            case 'update':
                 break;
             default:
                 throw new \InvalidArgumentException('Tipo de ticket inválido');
         }
+        return $rules;
+    }
 
+    private function requestedDataValidationRules($type)
+    {
+        $rules = [
+            'id' => ['required'],
+            'user_id' => ['required'],
+            'timestamp' => ['required'],
+            'justification' => ['required'],
+            'day_off' => ['required', 'boolean'],
+            'doctor' => ['required', 'boolean'],
+        ];
+    
+        if ($type == 'create') $rules['clock_id'] = 'nullable';
         return $rules;
     }
 

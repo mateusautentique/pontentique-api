@@ -11,7 +11,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'user_id',
-        'clock_id',
+        'clock_events_id',
         'type',
         'status',
         'justification',
@@ -21,4 +21,37 @@ class Ticket extends Model
     protected $casts = [
         'timestamp' => 'datetime',
     ];
+
+    public function approve()
+    {
+        $requested_data = json_decode($this->requested_data, true);
+
+        switch ($this->type) {
+            case 'create':
+                $this->clockEvent()->create($requested_data);
+                break;
+            case 'update':
+                $this->clockEvent()->update($requested_data);
+                break;
+            case 'delete':
+                $this->clockEvent()->delete();
+                break;
+        }
+        $this->update(['status' => 'approved']);
+    }
+
+    public function deny()
+    {
+        $this->update(['status' => 'denied']);
+    }
+
+    public function clockEvent()
+    {
+        return $this->belongsTo(ClockEvent::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
