@@ -71,13 +71,6 @@ class AuthController extends Controller
         }
     }
 
-    public function validateToken()
-    {
-        return Auth::guard('api')->check()
-            ? response(['message' => true], 200)
-            : response(['message' => false], 401);
-    }
-
     public function logout(Request $request)
     {
         try {
@@ -99,6 +92,13 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function validateToken()
+    {
+        return Auth::guard('api')->check()
+            ? response(['message' => true], 200)
+            : response(['message' => false], 401);
     }
 
     public function getLoggedUserInfo()

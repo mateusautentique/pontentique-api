@@ -100,14 +100,10 @@ class ClockController extends Controller
         }
     }
 
-    public function deleteClockEntry(Request $request)
+    public function deleteClockEntry($clock_id)
     {
         try {
-            $validatedData = $request->validate([
-                'id' => 'required',
-            ]);
-
-            $clockEvent = ClockEvent::find($validatedData['id']);
+            $clockEvent = ClockEvent::find($clock_id);
 
             if ($clockEvent) {
                 $clockEvent->delete();
@@ -295,7 +291,7 @@ class ClockController extends Controller
             });
     }
 
-    public function separateEvents($events)
+    private function separateEvents($events)
     {
         $normalEvents = $this->filterEvents($events, false);
         $dayOffEvents = $this->filterEvents($events, true);
