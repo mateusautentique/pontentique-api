@@ -417,6 +417,7 @@ class ClockController extends Controller
     {
         $eventData = [
             'day' => $formattedDate,
+            'expected_work_hours_on_day' => $isWeekend ? '0:00' : '8:00',
             'normal_hours_worked_on_day' => '0:00',
             'extra_hours_worked_on_day' => '0:00',
             'balance_hours_on_day' => $isWeekend ? '0:00' : '-8:00',

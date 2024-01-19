@@ -103,20 +103,16 @@ class AuthController extends Controller
 
     public function getLoggedUserInfo()
     {
-        $user = Auth::user();
-
-        if ($user) {
-            return response()->json([
-                'id' => $user->id,
-                'user_name' => $user->name,
-                'user_email' => $user->email,
-                'user_cpf' => $user->cpf,
-                'user_role' => $user->role,
-                'user_created_at' => $user->created_at,
-                'user_updated_at' => $user->updated_at,
-            ]);
-        } else {
-            return response()->json(['error' => 'Not authenticated'], 401);
+        try {
+            $user = Auth::user();
+    
+            if ($user) {
+                return response()->json($user);
+            } else {
+                return response()->json(['error' => 'Not authenticated'], 401);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }
