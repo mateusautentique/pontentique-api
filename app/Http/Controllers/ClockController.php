@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Carbon\Carbon;
@@ -49,33 +50,45 @@ class ClockController extends Controller
         }
     }
 
-    public function setDayOffForDay(Request $request)
+    public function setDayOffForDate(Request $request)
     {
         try {
             $validatedData = $request->validate([
                 'user_id' => 'required',
-                'day' => 'required|date_format:Y-m-d',
+                'start_day' => 'required|date',
+                'end_day' => 'required|date',
                 'day_off' => 'required|boolean',
                 'doctor' => 'required|boolean',
             ]);
 
-            $userId = $validatedData['user_id'];
-            $day = $validatedData['day'];
-            $dayOff = $validatedData['day_off'];
-            $doctor = $validatedData['doctor'];
+            $start = Carbon::parse($validatedData['start_day']);
+            $end = Carbon::parse($validatedData['end_day']);
 
-            $clockEvents = ClockEvent::where('user_id', $userId)
-                ->whereDate('timestamp', $day)
-                ->get();
+            for ($date = $start; $date->lte($end); $date->addDay()) {
+                $entries = DB::table('clock_events')
+                    ->where('user_id', $validatedData['user_id'])
+                    ->whereDate('timestamp', $date)
+                    ->get();
 
-            foreach ($clockEvents as $clockEvent) {
-                $clockEvent->update([
-                    'day_off' => $dayOff,
-                    'doctor' => $doctor,
-                ]);
+                if ($entries->isEmpty()) {
+                    $this->insertClockEntry(new Request([
+                        'user_id' => $validatedData['user_id'],
+                        'timestamp' => $date->copy()->setTime(8, 0),
+                        'justification' => 'Day off',
+                        'day_off' => $validatedData['day_off'],
+                        'doctor' => $validatedData['doctor'],
+                    ]));
+
+                    $this->insertClockEntry(new Request([
+                        'user_id' => $validatedData['user_id'],
+                        'timestamp' => $date->copy()->setTime(16, 0),
+                        'justification' => 'Day off',
+                        'day_off' => $validatedData['day_off'],
+                        'doctor' => $validatedData['doctor'],
+                    ]));
+                }
             }
-
-            return response()->json(['message' => 'Folga atualizada com sucesso para o dia ' . $day]);
+            return response()->json(['message' => 'Folga atualizada com sucesso para o período de ' . $start->format('Y-m-d') . ' a ' . $end->format('Y-m-d')]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Entrada inválida'], 400);
         } catch (\Exception $e) {
@@ -175,12 +188,12 @@ class ClockController extends Controller
     private function calculateTotalTime($event)
     {
         $totalTime = 0;
-    
+
         $event->each(function ($item, $index) use (&$totalTime, $event) {
             if ($index % 2 == 0) {
                 $clockInEvent = $item;
                 $clockOutEvent = $event->get($index + 1);
-    
+
                 if ($clockOutEvent) {
                     $clockInTime = \Carbon\Carbon::parse($clockInEvent['timestamp']);
                     $clockOutTime = \Carbon\Carbon::parse($clockOutEvent['timestamp']);
@@ -190,7 +203,7 @@ class ClockController extends Controller
                 }
             }
         });
-    
+
         return $totalTime;
     }
 
@@ -295,10 +308,10 @@ class ClockController extends Controller
     {
         $normalEvents = $this->filterEvents($events, false);
         $dayOffEvents = $this->filterEvents($events, true);
-    
+
         return [$normalEvents, $dayOffEvents];
     }
-    
+
     private function filterEvents($events, $isDayOff)
     {
         return $events->filter(function ($event) use ($isDayOff) {
@@ -308,7 +321,8 @@ class ClockController extends Controller
         });
     }
 
-    private function fillMissingDays($request, $clockEvents) {
+    private function fillMissingDays($request, $clockEvents)
+    {
         $dateRange = $this->getDateRange($request);
         foreach ($dateRange as $date) {
             $date = Carbon::instance($date);
@@ -322,21 +336,22 @@ class ClockController extends Controller
         return $clockEvents;
     }
 
-    private function getClockEvents($query, $workJourneyHoursInSec) {
+    private function getClockEvents($query, $workJourneyHoursInSec)
+    {
         return $this->groupClockEventsByDate($query)
-            ->map(function ($eventsForDate) use ($workJourneyHoursInSec){
+            ->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
                 $events = $eventsForDate->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
-    
+
                 $day = $eventsForDate->first()->timestamp;
-    
+
                 list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
                 $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-    
+
                 list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
-    
+
                 return $this->createEntryData(
                     $day,
                     $expectedWorkHoursOnDay,
@@ -349,14 +364,15 @@ class ClockController extends Controller
             });
     }
 
-    private function generateReport($clockEvents) {
+    private function generateReport($clockEvents)
+    {
         $user = Auth::user();
         list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
-    
+
         $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
             return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
         })->sum();
-    
+
         return $this->createReportData(
             $user,
             $totalTimeWorkedInSeconds,

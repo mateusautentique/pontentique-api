@@ -105,7 +105,6 @@ class AuthController extends Controller
     {
         try {
             $user = Auth::user();
-    
             if ($user) {
                 return response()->json($user);
             } else {

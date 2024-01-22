@@ -10,18 +10,8 @@ class UserController extends Controller
     public function getAllUsers()
     {
         try {
-            $users = User::all()->makeVisible('password');
+            $users = User::all();
             return response()->json($users);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function insertUser(Request $request)
-    {
-        try {
-            $user = User::create($request->all());
-            return response()->json($user);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -31,6 +21,16 @@ class UserController extends Controller
     {  
         try {
             $user = User::findOrFail($id);
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function insertUser(Request $request)
+    {
+        try {
+            $user = User::create($request->all());
             return response()->json($user);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
