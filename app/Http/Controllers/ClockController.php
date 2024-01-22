@@ -185,14 +185,14 @@ class ClockController extends Controller
 
     //HOUR CALCULATION
 
-    private function calculateTotalTime($event)
+    private function calculateTotalTime($events)
     {
         $totalTime = 0;
 
-        $event->each(function ($item, $index) use (&$totalTime, $event) {
+        $events->each(function ($item, $index) use (&$totalTime, $events) {
             if ($index % 2 == 0) {
                 $clockInEvent = $item;
-                $clockOutEvent = $event->get($index + 1);
+                $clockOutEvent = $events->get($index + 1);
 
                 if ($clockOutEvent) {
                     $clockInTime = \Carbon\Carbon::parse($clockInEvent['timestamp']);
@@ -318,7 +318,7 @@ class ClockController extends Controller
             $isEventDayOff = (bool)$event['day_off'];
             $isEventDoctor = (bool)$event['doctor'];
             return $isDayOff ? ($isEventDayOff || $isEventDoctor) : (!$isEventDayOff && !$isEventDoctor);
-        });
+        })->values();
     }
 
     private function fillMissingDays($request, $clockEvents)
@@ -340,18 +340,29 @@ class ClockController extends Controller
     {
         return $this->groupClockEventsByDate($query)
             ->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
-                $events = $eventsForDate->map(function ($event, $index) {
+                list($normalEvents, $dayOffEvents) = $this->separateEvents($eventsForDate);
+    
+                $normalEvents = $normalEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
 
-                $day = $eventsForDate->first()->timestamp;
+                Log::info($normalEvents);
+    
+                $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
+                    return $this->createEventData($event, $index);
+                });
 
-                list($normalEvents, $dayOffEvents) = $this->separateEvents($events);
+                Log::info($dayOffEvents);
+    
+                $events = collect($normalEvents)->concat($dayOffEvents);
+    
+                $day = $eventsForDate->first()->timestamp;
+    
                 $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-
+    
                 list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
-
+    
                 return $this->createEntryData(
                     $day,
                     $expectedWorkHoursOnDay,
