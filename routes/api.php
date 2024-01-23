@@ -21,8 +21,6 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
-//Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
-
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -61,5 +59,8 @@ Route::middleware('auth:api')->group(function () {
         });
     });
 
-    Route::delete('/test', [TicketController::class, 'dropAllTickets']);
+    // Route::prefix('test')->group(function () {
+    //     Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
+    //     Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
+    // });
 });
