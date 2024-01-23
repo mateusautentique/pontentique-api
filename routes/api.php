@@ -47,10 +47,10 @@ Route::middleware('auth:api')->group(function () {
 
         Route::prefix('manageUsers')->group(function () {
             Route::get('/', [UserController::class, 'getAllUsers']);
+            Route::get('/user/', [UserController::class, 'getUserById']);
             Route::post('/user', [UserController::class, 'insertUser']);
-            Route::get('/user/{id}', [UserController::class, 'getUserById']);
-            Route::put('/user/{id}', [UserController::class, 'updateUser']);
-            Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
+            Route::put('/user/', [UserController::class, 'updateUser']);
+            Route::delete('/user/', [UserController::class, 'deleteUser']);
         });
 
         Route::prefix('manageTickets')->group(function () {
