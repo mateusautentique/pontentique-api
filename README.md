@@ -129,14 +129,14 @@ A resposta deve ser um JSON contendo diversos atributos do usuário logado.
 ```json
 {
     "id": 1,
-    "user_name": "Jair Teste da Silva",
-    "user_email": "jairtestetesteteste@tuamaeaquelaursa.com",
-    "user_cpf": "12345678900",
-    "user_role": "user",
-    "user_created_at": "2024-01-16T17:14:58.000000Z",
-    "user_updated_at": "2024-01-16T17:14:58.000000Z"
+    "name": "Jair Teste da Silva",
+    "cpf": "12345678900",
+    "email": "jair@tuamaeaquelaursa.com",
+    "role": "user",
+    "work_journey_hours": 8,
+    "created_at": "2024-01-23T18:34:12.000000Z",
+    "updated_at": "2024-01-23T18:34:12.000000Z"
 }
-
 ```
 
 ------------------------------------------------------
@@ -147,7 +147,7 @@ Essas são requisições que podem ser feitas apenas por administradores, e serv
 
 ## Listar todos os usuários
 
-`GET` para http://localhost/api/admin/manageUsers/users
+`GET` para http://localhost/api/admin/manageUsers/
 
 - Response
 
@@ -156,27 +156,31 @@ A resposta deve conter um JSON com informações de todos os usuários cadastrad
 [
     {
         "id": 1,
-        "name": "Nome do usuário",
-        "email": "Email do usuário",
-        "cpf": "CPF do usuário",
-        "created_at": "Data de criação do usuário",
-        "updated_at": "Data de atualização do usuário"
+        "name": "Jair Teste da Silva",
+        "cpf": "12345678900",
+        "email": "jair@tuamaeaquelaursa.com",
+        "role": "user",
+        "work_journey_hours": 8,
+        "created_at": "2024-01-23T18:34:12.000000Z",
+        "updated_at": "2024-01-23T18:34:12.000000Z"
     },
-    {
-        "id": 2,
-        "name": "Nome do usuário",
-        "email": "Email do usuário",
-        "cpf": "CPF do usuário",
-        "created_at": "Data de criação do usuário",
-        "updated_at": "Data de atualização do usuário"
-    }
     ...
 ]
 ```
 
 ## Listar um usuário específico
 
-`GET` para http://localhost/api/admin/manageUsers/user/{id}
+`GET` para http://localhost/api/admin/manageUsers/user/
+
+- Body
+
+A requisição deve conter um JSON com o id do usuário a ser buscado:
+
+```json
+{
+    "user_id": 1
+}
+```
 
 - Response
 
@@ -185,28 +189,32 @@ A resposta deve conter um JSON com informações do usuário com o id especifica
 ```json
 {
     "id": 1,
-    "name": "Nome do usuário",
-    "email": "Email do usuário",
-    "cpf": "CPF do usuário",
-    "created_at": "Data de criação do usuário",
-    "updated_at": "Data de atualização do usuário"
+    "name": "Jair Teste da Silva",
+    "cpf": "12345678900",
+    "email": "jair@tuamaeaquelaursa.com",
+    "role": "user",
+    "work_journey_hours": 8,
+    "created_at": "2024-01-23T18:34:12.000000Z",
+    "updated_at": "2024-01-23T18:34:12.000000Z"
 }
 ```
 
 ## Atualizar um usuário
 
-`PUT` para http://localhost/api/admin/manageUsers/user/{id}
+`PUT` para http://localhost/api/admin/manageUsers/user/
 
-A requisição deve conter um JSON com os campos a serem alterados:
+A requisição deve conter um JSON com os campos a serem alterados, bem como um campo "user_id", que representa o id do usuário a ser alterado:
 
 - Body
 
 ```json
 {
+    "user_id": 1,
     "name": "Nome do usuário",
     "email": "Email do usuário",
-    "password": "Senha do usuário",
-    "cpf": "CPF do usuário"
+    "cpf": "CPF do usuário",
+    "role": "user",
+    "work_journey_hours": 8
 }
 ```
 
@@ -217,17 +225,23 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 ```json
 {
     "id": 1,
-    "name": "Nome do usuário",
-    "email": "Email do usuário",
-    "cpf": "CPF do usuário",
-    "created_at": "Data de criação do usuário",
-    "updated_at": "Data de atualização do usuário"
+    "name": "Jair Teste da Silva",
+    "cpf": "12345678900",
+    "email": "jair@tuamaeaquelaursa.com",
+    "role": "user",
+    "work_journey_hours": 8,
+    "created_at": "2024-01-23T18:34:12.000000Z",
+    "updated_at": "2024-01-23T18:34:12.000000Z"
 }
 ```
 
 ## Deletar um usuário
 
-`DELETE` para http://localhost/api/admin/manageUsers/user/{id}
+`DELETE` para http://localhost/api/admin/manageUsers/user/
+
+- Body
+
+A requisição deve conter um JSON com um campo "user_id", que representa o id do usuário a ser deletado:
 
 - Response
 
@@ -267,7 +281,7 @@ Exemplo:
 
 ## Listar todos os pontos de um usuário
 
-`GET` para http://localhost/api/user/userEntries
+`GET` para http://localhost/api/admin/userEntries
 
 - Response
 
@@ -278,20 +292,26 @@ Exemplo:
 ```json
 [
     {
-        "id": 1,
+        "id": 11,
         "user_id": 1,
-        "timestamp": "2023-12-11T14:13:10.000000Z",
-        "created_at": "2023-12-11T14:13:10.000000Z",
-        "updated_at": "2023-12-11T14:13:10.000000Z",
-        "justification": null
+        "timestamp": "2024-01-23T15:58:00.000000Z",
+        "created_at": "2024-01-23T18:35:57.000000Z",
+        "updated_at": "2024-01-23T18:35:57.000000Z",
+        "justification": null,
+        "day_off": 0,
+        "doctor": 0,
+        "controlId": 0
     },
     {
-        "id": 2,
+        "id": 10,
         "user_id": 1,
-        "timestamp": "2023-12-10T18:30:00.000000Z",
-        "created_at": "2023-12-08T19:40:02.000000Z",
-        "updated_at": "2023-12-08T19:40:02.000000Z",
-        "justification": "i forgor"
+        "timestamp": "2024-01-23T15:02:00.000000Z",
+        "created_at": "2024-01-23T18:35:57.000000Z",
+        "updated_at": "2024-01-23T18:35:57.000000Z",
+        "justification": null,
+        "day_off": 0,
+        "doctor": 0,
+        "controlId": 0
     },
     ...
 ]
@@ -378,28 +398,40 @@ A resposta contém um JSON com diversas informações sobre os pontos do usuári
             "event_count": 4,
             "events": [
                 {
-                    "id": 6,
-                    "timestamp": "2023-12-01 06:01:11",
-                    "justification": "i forgot",
-                    "type": "clock_in"
+                    "id": 155,
+                    "timestamp": "2024-01-15 08:40:00",
+                    "justification": null,
+                    "type": "clock_in",
+                    "day_off": 0,
+                    "doctor": 0,
+                    "controlId": 0
                 },
                 {
-                    "id": 7,
-                    "timestamp": "2023-12-01 12:41:17",
-                    "justification": "i forgot",
-                    "type": "clock_out"
+                    "id": 156,
+                    "timestamp": "2024-01-15 12:00:00",
+                    "justification": null,
+                    "type": "clock_out",
+                    "day_off": 0,
+                    "doctor": 0,
+                    "controlId": 0
                 },
                 {
-                    "id": 8,
-                    "timestamp": "2023-12-01 13:21:55",
-                    "justification": "i forgot",
-                    "type": "clock_in"
+                    "id": 157,
+                    "timestamp": "2024-01-15 13:00:00",
+                    "justification": null,
+                    "type": "clock_in",
+                    "day_off": 0,
+                    "doctor": 0,
+                    "controlId": 0
                 },
                 {
-                    "id": 9,
-                    "timestamp": "2023-12-01 20:32:25",
-                    "justification": "i forgot",
-                    "type": "clock_out"
+                    "id": 158,
+                    "timestamp": "2024-01-15 17:45:00",
+                    "justification": null,
+                    "type": "clock_out",
+                    "day_off": 0,
+                    "doctor": 0,
+                    "controlId": 0
                 }
             ]
         }
@@ -428,45 +460,9 @@ Os campos representam:
         - `timestamp`: Data e hora do ponto.
         - `justification`: Justificativa do ponto.
         - `type`: Tipo do ponto. Pode ser "clock_in" ou "clock_out".
-
-
-
-## Calcular as horas e o valor a receber de um usuário em um período específico
-
-`POST` para http://localhost/api/user/calculateHours
-
-- Body
-
-O body da requisição deve conter um campo "user_id", que representa o id do usuário, e dois campos adicionais: "start_date" e "end_date" (no formato "YYYY-MM-DD"), que representam o início e o fim do período que se deseja consultar, funcionando de um jeito similar à requisição anteiror. Além disso, deve-se especificar o valor da hora do usuário, no campo "hour_rate".
-
-Exemplo:
-
-```json
-{
-    "user_id": 1,
-    "start_date": "2023-12-08",
-    "end_date": "2023-12-11",
-    "hour_rate": 25
-}
-```
-
-> Calcula as horas e o valor a receber do usuário com id 1, entre os dias 08/12/2023 e 11/12/2023, com o valor da hora sendo R$ 25,00.
-
-- Response
-
-```json
-{
-    "total_hours_worked": "13:51",
-    "total_money_earned": "346.08"
-}
-```
-
-Os campos representam:
-
-- `total_hours_worked`: Tempo total trabalhado no período.
-- `total_money_earned`: Valor total a receber no período.
-
----
+        - `day_off`: Indica se o ponto é um dia de folga. Pode ser 0 ou 1.
+        - `doctor`: Indica se o ponto é um dia de atestado. Pode ser 0 ou 1.
+        - `controlId`: Indica se o ponto foi importado da máquina de ponto. Pode ser 0 ou 1.
 
 ## Inserir um ponto manualmente
 
@@ -514,7 +510,9 @@ Exemplo:
 {
     "id": 15,
     "timestamp": "2023-12-08 19:40:02",
-    "justification": "surpreendentemente não é i forgor"
+    "justification": "surpreendentemente não é i forgor",
+    "day_off": 0,
+    "doctor": 0
 }
 ```
 
@@ -531,6 +529,18 @@ Exemplo:
 ## Deletar um ponto manualmente
 
 `DELETE` para http://localhost/api/admin/userEntries/
+
+- Body
+
+O body da requisição deve conter um campo "id", que representa o id do ponto.
+
+Exemplo:
+
+```json
+{
+    "id": 15
+}
+```
 
 - Response
 
@@ -629,7 +639,6 @@ No caso de tickets do tipo "delete", o campo requested_data pode ser nulo, e no 
 {
     "user_id": "1",
     "type": "create",
-    "clock_event_id": "2",
     "justification": "ticket test",
     "requested_data": {
         "user_id": "1",
@@ -641,7 +650,7 @@ No caso de tickets do tipo "delete", o campo requested_data pode ser nulo, e no 
 }
 ```
 
-> Cria um ticket do tipo "create", para o ponto com id 2, com a justificativa "ticket test", e os dados requisitados sendo os mesmos de um create.
+> Cria um ticket do tipo "create", com a justificativa "ticket test", e os dados requisitados sendo os mesmos de um create.
 
 - Response
 

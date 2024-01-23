@@ -345,14 +345,10 @@ class ClockController extends Controller
                 $normalEvents = $normalEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
-
-                Log::info($normalEvents);
     
                 $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
-
-                Log::info($dayOffEvents);
     
                 $events = collect($normalEvents)->concat($dayOffEvents);
     
@@ -404,6 +400,7 @@ class ClockController extends Controller
             'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
             'day_off' => $event->day_off,
             'doctor' => $event->doctor,
+            'controlId' => $event->control_id,
         ];
     }
 
