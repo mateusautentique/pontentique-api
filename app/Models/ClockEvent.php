@@ -15,6 +15,7 @@ class ClockEvent extends Model
         'justification',
         'day_off',
         'doctor',
+        'controlId',
     ];
 
     protected $casts = [

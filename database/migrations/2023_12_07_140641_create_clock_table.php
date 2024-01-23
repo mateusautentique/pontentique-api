@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('justification')->nullable();
             $table->boolean('day_off')->default(false);
             $table->boolean('doctor')->default(false);
+            $table->boolean('controlId')->default(false);
         });
     }
 
