@@ -11,7 +11,7 @@ use App\Models\ClockEvent;
 
 class GetControlIdEntries extends Command
 {
-    protected $controlIdHost = 'https://192.168.1.249:8743/';
+    //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:get-control-id-entries"
     /**
      * The name and signature of the console command.
      *
@@ -32,9 +32,7 @@ class GetControlIdEntries extends Command
     public function handle()
     {
         try {
-            $loginInfo = $this->loginControlId();
-    
-            $session = $loginInfo['session'];
+            $session = $this->loginControlId()['session'];
     
             $afd = $this->getAFD($session);
     
@@ -49,7 +47,7 @@ class GetControlIdEntries extends Command
     private function loginControlId(){
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
-        ])->withoutVerifying()->post($this->controlIdHost . 'login.fcgi', [
+        ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/login.fcgi', [
             'login' => 'admin',
             'password' => 'admin'
         ]);
@@ -60,7 +58,7 @@ class GetControlIdEntries extends Command
     private function logoutControlId($session){
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
-        ])->withoutVerifying()->post($this->controlIdHost . 'login.fcgi', [
+        ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/logout.fcgi', [
             'session' => $session
         ]);
 
@@ -70,7 +68,7 @@ class GetControlIdEntries extends Command
     private function getAFD($session){
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
-        ])->withoutVerifying()->post($this->controlIdHost . 'get_afd.fcgi', [
+        ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/get_afd.fcgi', [
             'session' => $session,
             'mode' => '671'
         ]);
