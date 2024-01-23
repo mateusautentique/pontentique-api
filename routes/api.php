@@ -49,6 +49,7 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/user', [UserController::class, 'insertUser']);
             Route::put('/user/', [UserController::class, 'updateUser']);
             Route::delete('/user/', [UserController::class, 'deleteUser']);
+            Route::post('/user/status', [UserController::class, 'checkCurrentUserStatus']);
         });
 
         Route::prefix('manageTickets')->group(function () {

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\ClockEvent;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -88,6 +91,30 @@ class UserController extends Controller
             return response()->json(['message' => 'Usuário deletado com sucesso!']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function checkCurrentUserStatus(Request $request){
+        try {
+            $request->validate([
+                'user_id' => 'required',
+            ]);
+
+            $todayEntriesCount = ClockEvent::where('user_id', $request['user_id'])->whereDate('timestamp', Carbon::today())->count();
+
+            if ($todayEntriesCount == 0) {
+                return response()->json(['message' => 'Gray']);
+            } else if ($todayEntriesCount % 2 == 1) {
+                return response()->json(['message' => 'Green']);
+            } else {
+                return response()->json(['message' => 'Red']);
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Invalid input'], 400);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => 'An error occurred'], 500);
         }
     }
 }
