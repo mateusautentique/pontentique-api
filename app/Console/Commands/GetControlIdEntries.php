@@ -79,18 +79,19 @@ class GetControlIdEntries extends Command
     private function decodeAFD($afd){
         $lines = explode("\n", $afd);
     
+        $users = User::all()->keyBy('cpf');
+    
         foreach($lines as $line){
             if ($line[9] == '3'){
                 $date = substr($line, 10, 14);
                 $timestamp = $this->dateFormat($date);
                 $cpf = substr($line, 23, 11);
-                
-                $user = User::where('cpf', $cpf)->first();
-                $userId = $user ? $user->id : null;
     
-                if ($userId){
+                $user = $users->get($cpf);
+    
+                if ($user){
                     ClockEvent::firstOrCreate([
-                        'user_id' => $userId, 
+                        'user_id' => $user->id, 
                         'timestamp' => $timestamp,
                         'controlId' => true,
                     ]);
