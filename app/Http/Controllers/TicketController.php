@@ -146,43 +146,34 @@ class TicketController extends Controller
             'requested_data' => 'required',
         ];
     
-        switch ($type) {
-            case 'create':
-                $rules['clock_event_id'] = 'nullable';
-                $requestedDataRules = $this->requestedDataValidationRules($type);
-                foreach ($requestedDataRules as $key => $rule) {
-                    $rules["requested_data.$key"] = $rule;
-                }
-                $rules['requested_data.id'] = 'nullable';
-                break;
-            case 'delete':
-                $rules['requested_data'] = 'nullable';
-                break;
-            case 'update':
-                $requestedDataRules = $this->requestedDataValidationRules($type);
-                foreach ($requestedDataRules as $key => $rule) {
-                    $rules["requested_data.$key"] = $rule;
-                }
-                break;
-            default:
-                throw new \InvalidArgumentException('Tipo de ticket inválido');
+        if ($type === 'create' || $type === 'update') {
+            $rules['clock_event_id'] = 'nullable';
+            $requestedDataRules = $this->requestedDataValidationRules($type);
+            foreach ($requestedDataRules as $key => $rule) {
+                $rules["requested_data.$key"] = $rule;
+            }
         }
+    
+        if ($type === 'delete') {
+            $rules['requested_data'] = 'nullable';
+        }
+    
+        if (!in_array($type, ['create', 'delete', 'update'])) {
+            throw new \InvalidArgumentException('Tipo de ticket inválido');
+        }
+    
         return $rules;
     }
-
+    
     private function requestedDataValidationRules($type)
     {
-        $rules = [
-            'id' => ['required'],
+        return [
             'user_id' => ['required'],
             'timestamp' => ['required'],
             'justification' => ['required'],
             'day_off' => ['required', 'boolean'],
             'doctor' => ['required', 'boolean'],
         ];
-    
-        if ($type == 'create') $rules['clock_id'] = 'nullable';
-        return $rules;
     }
 
     private function handlerTicketValidationRules($request)
