@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\ClockEvent;
 use App\Models\User;
@@ -104,10 +103,12 @@ class ClockController extends Controller
     public function getAllUserClockEntries(Request $request)
     {
         try {
-            $clockEvents = ClockEvent::where('user_id', $request->user()->id)
+            $userId = $request->input('user_id');
+    
+            $clockEvents = ClockEvent::where('user_id', $userId)
                 ->orderBy('id', 'desc')
                 ->get();
-
+    
             return response()->json($clockEvents);
         } catch (\Exception $e) {
             Log::error($e);
