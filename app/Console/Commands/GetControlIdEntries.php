@@ -73,6 +73,8 @@ class GetControlIdEntries extends Command
             'mode' => '671'
         ]);
 
+        Log::info($response->body());
+
         return $response->body();
     }
 

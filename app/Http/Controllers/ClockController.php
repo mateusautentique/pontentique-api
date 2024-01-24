@@ -34,14 +34,16 @@ class ClockController extends Controller
     public function getClockEventsByPeriod(Request $request)
     {
         try {
-            $query = $this->validateDataIntoQuery($request);
+            $data = $this->validateDataIntoQuery($request);
+            $query = $data['query'];
+            $user = $data['user'];
             $workJourneyHoursInSec = $request['work_journey_hours'] ?? 28800;
 
             $clockEvents = $this->getClockEvents($query, $workJourneyHoursInSec);
 
             $clockEvents = $this->fillMissingDays($request, $clockEvents);
 
-            return response()->json($this->generateReport($clockEvents));
+            return response()->json($this->generateReport($clockEvents, $user));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Invalid input'], 400);
         } catch (\Exception $e) {
@@ -255,9 +257,12 @@ class ClockController extends Controller
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate)->endOfDay();
 
-        return ClockEvent::where('user_id', $userId)
-            ->with('user')
-            ->whereBetween('timestamp', [$startDate, $endDate]);
+        return [
+            'query' => ClockEvent::where('user_id', $userId)
+                ->with('user')
+                ->whereBetween('timestamp', [$startDate, $endDate]),
+            'user' => $user
+        ];
     }
 
     private function getDateRange($request)
@@ -371,9 +376,8 @@ class ClockController extends Controller
             });
     }
 
-    private function generateReport($clockEvents)
+    private function generateReport($clockEvents, $user)
     {
-        $user = Auth::user();
         list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
 
         $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
