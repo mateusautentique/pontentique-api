@@ -36,7 +36,7 @@ class ClockController extends Controller
             $data = $this->validateDataIntoQuery($request);
             $query = $data['query'];
             $user = $data['user'];
-            $workJourneyHoursInSec = $request['work_journey_hours'] ?? 28800;
+            $workJourneyHoursInSec = $user->work_journey_hours * 3600;
 
             $clockEvents = $this->getClockEvents($query, $workJourneyHoursInSec);
 
@@ -212,7 +212,7 @@ class ClockController extends Controller
 
     private function calculateWorkHours($totalTimeWorked, $workJourneyHoursForDay, $defaultWorkJourneyHours = 8)
     {
-        $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay * 3600);
+        $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay);
         $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
         if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {
             $extraHoursInSec = 0;
@@ -230,10 +230,10 @@ class ClockController extends Controller
         return [$totalTimeWorkedInSeconds, $totalNormalHours];
     }
 
-    private function calculateBalanceOfHours($expectedWorkHoursInSec, $totalTimeWorkedInSec)
+    private function calculateBalanceOfHours(int $workedHoursInSec, int $expectedWorkHoursInSec)
     {
-        $balanceOfHoursInSec = $totalTimeWorkedInSec - $expectedWorkHoursInSec;
-        return $this->convertDecimalToTime($balanceOfHoursInSec);
+        $balanceOfHours = ($workedHoursInSec - $expectedWorkHoursInSec) / 3600;
+        return $this->convertDecimalToTime($balanceOfHours);
     }
 
     //UTILS
@@ -282,16 +282,19 @@ class ClockController extends Controller
 
     private function convertDecimalToTime($hoursDecimal)
     {
+        $sign = $hoursDecimal < 0 ? '-' : '';
+        $hoursDecimal = abs($hoursDecimal);
+    
         $hours = intval($hoursDecimal);
-        $decimalHours = abs($hoursDecimal - $hours);
+        $decimalHours = $hoursDecimal - $hours;
         $minutes = round($decimalHours * 60);
-
+    
         if ($minutes == 60) {
             $hours += 1;
             $minutes = 0;
         }
-
-        return sprintf("%d:%02d", $hours, $minutes);
+    
+        return sprintf("%s%d:%02d", $sign, $hours, $minutes);
     }
 
     private function convertTimeToDecimal($time)
@@ -351,15 +354,15 @@ class ClockController extends Controller
                 $normalEvents = $normalEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
-    
+
                 $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
     
                 $events = collect($normalEvents)->concat($dayOffEvents);
-    
+
                 $day = $eventsForDate->first()->timestamp;
-    
+
                 $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
     
@@ -417,8 +420,8 @@ class ClockController extends Controller
             'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
             'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
             'balance_hours_on_day' => $this->calculateBalanceOfHours(
-                $expectedWorkHoursOnDay / 3600,
-                $totalTimeWorkedInSec / 3600
+                ($normalHoursInSec + $extraHoursInSec),
+                $expectedWorkHoursOnDay
             ),
             'total_time_worked_in_seconds' => $totalTimeWorkedInSec,
             'event_count' => $eventsForDate->count(),

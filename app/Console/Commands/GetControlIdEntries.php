@@ -73,8 +73,6 @@ class GetControlIdEntries extends Command
             'mode' => '671'
         ]);
 
-        Log::info($response->body());
-
         return $response->body();
     }
 
@@ -104,6 +102,6 @@ class GetControlIdEntries extends Command
 
     private function dateFormat($dateString) {
         $date = DateTime::createFromFormat('dmYHis', $dateString);
-        return $timestamp = $date->format('Y-m-d H:i:s');
+        return $date->format('Y-m-d H:i:s');
     }
 }
