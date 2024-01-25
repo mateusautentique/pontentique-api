@@ -20,11 +20,14 @@ class Ticket extends Model
 
     protected $casts = [
         'timestamp' => 'datetime',
+        'requested_data' => 'array',
     ];
+
+    protected $appends = ['user_name', 'clock_event_timestamp'];
 
     public function approve()
     {
-        $requested_data = json_decode($this->requested_data, true);
+        $requested_data = $this->requested_data;
 
         switch ($this->type) {
             case 'create':
@@ -53,5 +56,23 @@ class Ticket extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getUserNameAttribute()
+    {
+        return $this->user ? $this->user->name : null;
+    }
+
+    public function getClockEventTimestampAttribute()
+    {
+        return $this->clockEvent ? $this->clockEvent->timestamp->format('Y-m-d H:i:s') : null;
+    }
+
+    public function toArray()
+    {
+        $array = parent::toArray();
+        unset($array['user']);
+        unset($array['clock_event']);
+        return $array;
     }
 }

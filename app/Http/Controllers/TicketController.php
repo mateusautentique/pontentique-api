@@ -102,7 +102,7 @@ class TicketController extends Controller
                 'justification' => $request->justification,
                 'requested_data' => $request->type == 'delete' ? null : json_encode($request->requested_data),
             ]);
-            return response()->json(['message' => 'Ticket criado com sucesso'], 201);
+            return response()->json(['message' => 'Ticket criado com sucesso'], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\InvalidArgumentException $e) {
