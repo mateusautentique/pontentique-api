@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
+
+/*
+/   No começo, só eu e Deus sabiamos como funcionava esse código. Agora, só Deus sabe.
+*/
 
 class ClockController extends Controller
 {
@@ -56,40 +59,39 @@ class ClockController extends Controller
         try {
             $validatedData = $request->validate([
                 'user_id' => 'required',
-                'start_day' => 'required|date',
-                'end_day' => 'required|date',
+                'justification' => 'required',
+                'start_date' => 'required|date_format:Y-m-d',
+                'start_time' => 'required|date_format:H:i',
+                'end_date' => 'required|date_format:Y-m-d',
+                'end_time' => 'required|date_format:H:i',
                 'day_off' => 'required|boolean',
                 'doctor' => 'required|boolean',
             ]);
-
-            $start = Carbon::parse($validatedData['start_day']);
-            $end = Carbon::parse($validatedData['end_day']);
-
+            
+            $start = Carbon::createFromFormat('Y-m-d', $validatedData['start_date']);
+            $end = Carbon::createFromFormat('Y-m-d', $validatedData['end_date']);
+            
+            $start_time = Carbon::createFromFormat('H:i', $validatedData['start_time']);
+            $end_time = Carbon::createFromFormat('H:i', $validatedData['end_time']);
+            
             for ($date = $start; $date->lte($end); $date->addDay()) {
-                $entries = DB::table('clock_events')
-                    ->where('user_id', $validatedData['user_id'])
-                    ->whereDate('timestamp', $date)
-                    ->get();
-
-                if ($entries->isEmpty()) {
-                    $this->insertClockEntry(new Request([
-                        'user_id' => $validatedData['user_id'],
-                        'timestamp' => $date->copy()->setTime(8, 0),
-                        'justification' => 'Day off',
-                        'day_off' => $validatedData['day_off'],
-                        'doctor' => $validatedData['doctor'],
-                    ]));
-
-                    $this->insertClockEntry(new Request([
-                        'user_id' => $validatedData['user_id'],
-                        'timestamp' => $date->copy()->setTime(16, 0),
-                        'justification' => 'Day off',
-                        'day_off' => $validatedData['day_off'],
-                        'doctor' => $validatedData['doctor'],
-                    ]));
-                }
+                ClockEvent::create([
+                    'user_id' => $validatedData['user_id'],
+                    'timestamp' => $date->copy()->setTime($start_time->hour, $start_time->minute, 0)->format('Y-m-d H:i:s'),
+                    'justification' => $validatedData['justification'],
+                    'day_off' => $validatedData['day_off'],
+                    'doctor' => $validatedData['doctor'],
+                ]);
+                
+                ClockEvent::create([
+                    'user_id' => $validatedData['user_id'],
+                    'timestamp' => $date->copy()->setTime($end_time->hour, $end_time->minute, 0)->format('Y-m-d H:i:s'),
+                    'justification' => $validatedData['justification'],
+                    'day_off' => $validatedData['day_off'],
+                    'doctor' => $validatedData['doctor'],
+                ]);
             }
-            return response()->json(['message' => 'Folga atualizada com sucesso para o período de ' . $start->format('Y-m-d') . ' a ' . $end->format('Y-m-d')]);
+            return response()->json(['message' => 'Folga atualizada com sucesso para o período de ' . $start->format('Y-m-d') . ' ' . $start_time->format('H:i') . ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i')]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Entrada inválida'], 400);
         } catch (\Exception $e) {

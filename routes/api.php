@@ -36,7 +36,7 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/', [ClockController::class, 'getAllUserClockEntries']);
             Route::post('/', [ClockController::class, 'insertClockEntry']);
             Route::put('/', [ClockController::class, 'updateClockEntry']);
-            Route::delete('/', [ClockController::class, 'deleteClockEntry']);
+            Route::delete('/{id}', [ClockController::class, 'deleteClockEntry']);
 
             Route::prefix('setDayOff')->group(function () {
                 Route::post('/', [ClockController::class, 'setDayOffForDate']);
