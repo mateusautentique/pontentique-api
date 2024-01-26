@@ -27,7 +27,7 @@ class Ticket extends Model
 
     public function approve()
     {
-        $requested_data = $this->requested_data;
+        $requested_data = json_decode($this->requested_data, true);
 
         switch ($this->type) {
             case 'create':
@@ -71,6 +71,7 @@ class Ticket extends Model
     public function toArray()
     {
         $array = parent::toArray();
+        $array['requested_data'] = json_decode($array['requested_data'], true);
         unset($array['user']);
         unset($array['clock_event']);
         return $array;
