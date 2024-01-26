@@ -237,11 +237,7 @@ A resposta deve conter um JSON com informações do usuário atualizado:
 
 ## Deletar um usuário
 
-`DELETE` para http://localhost/api/admin/manageUsers/user/
-
-- Body
-
-A requisição deve conter um JSON com um campo "user_id", que representa o id do usuário a ser deletado:
+`DELETE` para http://localhost/api/admin/manageUsers/user/{id}
 
 - Response
 
@@ -252,6 +248,32 @@ A resposta deve conter um JSON com uma mensagem indicando que o usuário foi del
     "message": "Usuário deletado com sucesso!"
 }
 ```
+
+## Verificar status do usuário
+
+`POST` para http://localhost/api/admin/manageUsers/user/status
+
+- Body
+
+A requisição deve conter um JSON com o id do usuário a ser buscado:
+
+```json
+{
+    "user_id": 1
+}
+```
+
+- Response
+
+A resposta deve conter um JSON com um campo message, com uma cor representando o stauts do usuário naquele momento:
+
+```json
+{
+    "message": "Green"
+}
+```
+
+> As cores podem ser "Green" (ativo), "Red" (intervalo) ou "Gray" (falta).
 
 ------------------------------------------------------
 
@@ -480,7 +502,9 @@ Exemplo:
 {
     "user_id": 1,
     "timestamp": "2023-12-08 19:40:02",
-    "justification": "i forgor"
+    "justification": "i forgor",
+    "day_off": 0,
+    "doctor": 0
 }
 ```
 
