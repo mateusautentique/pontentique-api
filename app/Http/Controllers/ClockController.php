@@ -43,7 +43,7 @@ class ClockController extends Controller
 
             $clockEvents = $this->getClockEvents($query, $workJourneyHoursInSec);
 
-            $clockEvents = $this->fillMissingDays($request, $clockEvents);
+            $clockEvents = $this->fillMissingDays($request, $clockEvents, $user->work_journey_hours);
 
             return response()->json($this->generateReport($clockEvents, $user));
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -332,14 +332,14 @@ class ClockController extends Controller
         })->values();
     }
 
-    private function fillMissingDays($request, $clockEvents)
+    private function fillMissingDays($request, $clockEvents, $userWorkJourneyHours)
     {
         $dateRange = $this->getDateRange($request);
         foreach ($dateRange as $date) {
             $date = Carbon::instance($date);
             $formattedDate = $date->format('Y-m-d');
             if (!(isset($clockEvents[$formattedDate]))) {
-                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend());
+                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend(), $userWorkJourneyHours);
                 $clockEvents->put($formattedDate, $eventData);
             }
         }
@@ -447,14 +447,14 @@ class ClockController extends Controller
         ];
     }
 
-    private function createDefaultEntryResponse($formattedDate, $isWeekend)
+    private function createDefaultEntryResponse($formattedDate, $isWeekend, $userWorkJourneyHours)
     {
         $eventData = [
             'day' => $formattedDate,
-            'expected_work_hours_on_day' => $isWeekend ? '0:00' : '8:00',
+            'expected_work_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
             'normal_hours_worked_on_day' => '0:00',
             'extra_hours_worked_on_day' => '0:00',
-            'balance_hours_on_day' => $isWeekend ? '0:00' : '-8:00',
+            'balance_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime(-$userWorkJourneyHours),
             'total_time_worked_in_seconds' => 0,
             'event_count' => 0,
             'events' => [],
