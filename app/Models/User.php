@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'cpf',
         'role',
+        'work_journey_hours'
     ];
 
     /**
@@ -43,4 +44,14 @@ class User extends Authenticatable
         'role' => 'string',
         'password' => 'hashed',
     ];
+
+    public function clockEvents()
+    {
+        return $this->hasMany(ClockEvent::class);
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

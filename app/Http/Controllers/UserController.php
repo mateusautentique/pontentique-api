@@ -62,7 +62,8 @@ class UserController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($request->user_id)],
             'cpf' => ['required', Rule::unique('users')->ignore($request->user_id)],
             'role' => 'sometimes|in:admin,user',
-            'password' => 'sometimes|confirmed'
+            'password' => 'sometimes|confirmed',
+            'work_journey_hours' => 'sometimes|numeric|min:0|max:24'
         ]);
     
         try {
