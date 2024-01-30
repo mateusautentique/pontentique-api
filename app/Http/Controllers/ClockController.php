@@ -385,16 +385,21 @@ class ClockController extends Controller
     private function generateReport($clockEvents, $user)
     {
         list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
-
+    
         $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
             return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
         })->sum();
-
+    
+        $totalHourBalance = $clockEvents->map(function ($clockEvent) {
+            return $this->convertTimeToDecimal($clockEvent['balance_hours_on_day']);
+        })->sum();
+    
         return $this->createReportData(
             $user,
             $totalTimeWorkedInSeconds,
             $totalNormalHours,
             $expectedWorkJourneyHoursForPeriod,
+            $totalHourBalance,
             $clockEvents
         );
     }
@@ -431,7 +436,7 @@ class ClockController extends Controller
         ];
     }
 
-    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $expectedWorkJourneyHoursForPeriod, $clockEvents)
+    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $expectedWorkJourneyHoursForPeriod, $totalHourBalance, $clockEvents)
     {
         return [
             'user_id' => $user->id,
@@ -439,10 +444,7 @@ class ClockController extends Controller
             'total_expected_hours' => $this->convertDecimalToTime($expectedWorkJourneyHoursForPeriod),
             'total_hours_worked' =>  $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
             'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
-            'total_hour_balance' => $this->calculateBalanceOfHours(
-                $expectedWorkJourneyHoursForPeriod,
-                $totalTimeWorkedInSeconds / 3600
-            ),
+            'total_hour_balance' => $this->convertDecimalToTime($totalHourBalance),
             'entries' => $clockEvents->values(),
         ];
     }
