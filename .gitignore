@@ -18,3 +18,4 @@ yarn-error.log
 /.idea
 /.vscode
 /infra/mysql/db_data
+/infra/nginx_logs
