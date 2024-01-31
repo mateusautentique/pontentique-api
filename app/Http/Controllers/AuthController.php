@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Laravel\Passport\HasApiTokens;
 use App\Models\User;
 
@@ -14,18 +15,29 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'cpf' => 'required|string|size:11|unique:users',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:5|confirmed',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $firstError = collect($e->errors())->flatten()->first();
-            return response([
-                'message' => $firstError
-            ], 422);
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'cpf' => 'required|string|size:11|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:5|confirmed',
+        ]);
+    
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+
+            if ($errors->has('password') && str_contains($errors->first('password'), 'confirmação')) {
+                return response(['error' => $errors->first('password')], 494);
+            }        
+
+            $fields = ['name', 'cpf', 'email', 'password'];
+            $statusCodes = [490, 491, 492, 493];
+        
+            foreach ($fields as $index => $field) {
+                if ($errors->has($field)) {
+                    return response(['error' => $errors->first($field)], $statusCodes[$index]);
+                }
+            }
+            return response(['error' => $errors], 422);
         }
     
         try {
