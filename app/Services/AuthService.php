@@ -4,10 +4,12 @@ namespace App\Services;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 
 class AuthService
 {
-    public function register(array $data)
+    public function register(array $data): Response
     {
         try {
             $data['password'] = Hash::make($data['password']);
@@ -23,7 +25,7 @@ class AuthService
         return response(['token' => $token], 200);
     }
 
-    public function login(array $data)
+    public function login(array $data): Response
     {
         try {
             $user = User::where('cpf', $data['cpf'])->first();
@@ -40,7 +42,7 @@ class AuthService
         }
     }
 
-    public function logout($user)
+    public function logout(User $user): JsonResponse
     {
         try {
             if (!$user) {
@@ -62,14 +64,14 @@ class AuthService
         }
     }
 
-    public function validateToken()
+    public function validateToken(): Response
     {
         return Auth::guard('api')->check()
             ? response(['message' => true], 200)
             : response(['message' => false], 401);
     }
 
-    public function getLoggedUserInfo()
+    public function getLoggedUserInfo(): JsonResponse
     {
         try {
             $user = Auth::user();

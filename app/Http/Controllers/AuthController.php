@@ -3,16 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Laravel\Passport\HasApiTokens;
 use App\Services\AuthService;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
 
 class AuthController extends Controller
 {
-    use HasApiTokens;
-
     protected $authService;
 
     public function __construct(AuthService $authService)
