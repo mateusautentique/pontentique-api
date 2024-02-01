@@ -5,6 +5,10 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Promise;
+
 class TestAPIThrottle extends Command
 {
     //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:test-api-throttle"
