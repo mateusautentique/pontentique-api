@@ -2,120 +2,85 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use App\Models\User;
-use App\Models\ClockEvent;
-use Carbon\Carbon;
+use App\Http\Requests\InsertUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Services\UserService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserController extends Controller
 {
+    private UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     public function getAllUsers()
     {
         try {
-            $users = User::all();
+            $users = $this->userService->getAllUsers();
             return response()->json($users);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function getUserById(Request $request)
+    public function getUserById(int $id)
     {  
         try {
-            $id = $request->user_id;
-
-            $user = User::findOrFail($id);
+            $user = $this->userService->getUserById($id);
             return response()->json($user);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Usuário não encontrado'], 404);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function insertUser(Request $request)
+    public function insertUser(InsertUserRequest $request)
     {
         try {
-            $request->validate([
-                'name' => 'required',
-                'email' => 'required|email|unique:users',
-                'cpf' => 'required|unique:users',
-                'role' => 'sometimes|in:admin,user',
-                'password' => 'required|confirmed'
-            ]);
-            $request['password'] = Hash::make($request['password']);  
-            $validarequesttedInfo['role'] = $request['role'] === 'admin' ? 'admin' : 'user';
-    
-            $user = User::create($request);
-            return response()->json($user);
+            $user = $this->userService->insertUser($request->all());
+            return response()->json($user, 201);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function updateUser(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'name' => 'required',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($request->user_id)],
-            'cpf' => ['required', Rule::unique('users')->ignore($request->user_id)],
-            'role' => 'sometimes|in:admin,user',
-            'password' => 'sometimes|confirmed',
-            'work_journey_hours' => 'sometimes|numeric|min:0|max:24'
-        ]);
-    
-        try {
-            $user = User::findOrFail($request->user_id);
-    
-            $data = $request->all();
-            if ($request->filled('password')) {
-                $data['password'] = Hash::make($request->password);
-            }
-    
-            $user->update($data);
-    
-            return response()->json($user);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function deleteUser(Request $request)
+    public function updateUser(UpdateUserRequest $request)
     {
         try {
-            $id = $request->user_id;
-            
-            $user = User::findOrFail($id);
-            $user->delete();
-            return response()->json(['message' => 'Usuário deletado com sucesso!']);
+            $user = $this->userService->updateUser($request->all());
+            return response()->json($user);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Usuário não encontrado'], 404);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function checkCurrentUserStatus(Request $request){
+    public function deleteUser(int $id)
+    {
         try {
-            $request->validate([
-                'user_id' => 'required',
-            ]);
-
-            $todayEntriesCount = ClockEvent::where('user_id', $request['user_id'])->whereDate('timestamp', Carbon::today())->count();
-
-            if ($todayEntriesCount == 0) {
-                return response()->json(['message' => 'Gray']);
-            } else if ($todayEntriesCount % 2 == 1) {
-                return response()->json(['message' => 'Green']);
-            } else {
-                return response()->json(['message' => 'Red']);
-            }
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Invalid input'], 400);
+            $this->userService->deleteUser($id);
+            return response()->json(['message' => 'Usuário deletado com sucesso']);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Usuário não encontrado'], 404);
         } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'An error occurred'], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function checkUserStatus(int $id)
+    {
+        try {
+            $status = $this->userService->checkUserStatus($id);
+            return response()->json(['status' => $status]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Usuário não encontrado'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

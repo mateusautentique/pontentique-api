@@ -45,11 +45,11 @@ Route::middleware('auth:api')->group(function () {
 
         Route::prefix('manageUsers')->group(function () {
             Route::get('/', [UserController::class, 'getAllUsers']);
-            Route::get('/user/', [UserController::class, 'getUserById']);
+            Route::get('/user/{id}', [UserController::class, 'getUserById']);
             Route::post('/user', [UserController::class, 'insertUser']);
             Route::put('/user/', [UserController::class, 'updateUser']);
-            Route::delete('/user/', [UserController::class, 'deleteUser']);
-            Route::post('/user/status', [UserController::class, 'checkCurrentUserStatus']);
+            Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
+            Route::get('/user/status/{id}', [UserController::class, 'checkUserStatus']);
         });
 
         Route::prefix('manageTickets')->group(function () {
