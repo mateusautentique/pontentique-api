@@ -18,17 +18,39 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        return $this->authService->register($request->validated());
+        try {
+            $token = $this->authService->register($request->validated());
+            return response(['token' => $token], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(), 
+            ], 500);
+        }
     }
 
     public function login(LoginRequest $request)
     {
-        return $this->authService->login($request->validated());
+        try {
+            $token = $this->authService->login($request->validated());
+            return response(['token' => $token], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(), 
+            ], 500);
+        }
     }
 
     public function logout(Request $request)
     {
-        return $this->authService->logout($request->user());
+        try {
+            $user = $request->user();
+            $message = $this->authService->logout($user);
+            return response(['message' => $message], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(), 
+            ], 500);
+        }
     }
 
     public function validateToken()
@@ -38,6 +60,6 @@ class AuthController extends Controller
 
     public function getLoggedUserInfo()
     {
-        return $this->authService->getLoggedUserInfo();
+        return $this->authService->getLoggedUserInfo(auth()->user());
     }
 }

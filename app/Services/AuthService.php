@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Hash;
@@ -9,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 class AuthService
 {
-    public function register(array $data): Response
+    public function register(array $data): string
     {
         try {
             $data['password'] = Hash::make($data['password']);
@@ -20,48 +21,27 @@ class AuthService
                 'error' => $e->getMessage()
             ], 500);
         }
-    
-        $token = $user->createToken('userToken')->accessToken;
-        return response(['token' => $token], 200);
+
+        return $user->createToken('userToken')->accessToken;
     }
 
-    public function login(array $data): Response
+    public function login(array $data): string
     {
-        try {
-            $user = User::where('cpf', $data['cpf'])->first();
-            if ($user && Hash::check($data['password'], $user->password)) {
-                $token = $user->createToken('userToken')->accessToken;
-                return response(['token' => $token], 200);
-            } else {
-                return response(['error' => 'Usuário ou senha incorretos'], 401);
-            }
-        } catch (\Exception $e) {
-            return response([
-                'message' => $e->getMessage(), 
-            ], 500);
+        $user = User::where('cpf', $data['cpf'])->first();
+        if ($user && Hash::check($data['password'], $user->password)) {
+            return $user->createToken('userToken')->accessToken;
         }
     }
 
-    public function logout(User $user): JsonResponse
+    public function logout(User $user): string
     {
-        try {
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Not logged in'
-                ], 401);
-            }
-            foreach ($user->tokens as $token) {
-                $token->revoke();
-            }
-            return response()->json([
-                'message' => 'Successfully logged out'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Logout failed',
-                'error' => $e->getMessage()
-            ], 500);
+        if (!$user) {
+            return 'User not found';
         }
+        foreach ($user->tokens as $token) {
+            $token->revoke();
+        }
+        return 'Successfully logged out';
     }
 
     public function validateToken(): Response
@@ -71,17 +51,8 @@ class AuthService
             : response(['message' => false], 401);
     }
 
-    public function getLoggedUserInfo(): JsonResponse
+    public function getLoggedUserInfo(User $user): JsonResponse
     {
-        try {
-            $user = Auth::user();
-            if ($user) {
-                return response()->json($user);
-            } else {
-                return response()->json(['error' => 'Not authenticated'], 401);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json($user);
     }
 }
