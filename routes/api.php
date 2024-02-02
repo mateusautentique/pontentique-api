@@ -55,7 +55,7 @@ Route::middleware('auth:api')->group(function () {
         Route::prefix('manageTickets')->group(function () {
             Route::get('/', [TicketController::class, 'showAllTickets']);
             Route::get('/active', [TicketController::class, 'showAllActiveTickets']);
-            Route::post('/user', [TicketController::class, 'showAllUserTickets']);
+            Route::get('/user/{id}', [TicketController::class, 'showAllUserTickets']);
             Route::put('/handle', [TicketController::class, 'handleTicket']);
         });
     });
