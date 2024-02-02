@@ -1,44 +1,28 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Services;
 
-use App\Http\Requests\InsertClockEntryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use App\Services\ClockService;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
 
-/*
-/   No começo, só eu e Deus sabiamos como funcionava esse código. Agora, só Deus sabe.
-*/
-
-class ClockController extends Controller
+class ClockService
 {
-    private ClockService $clockService;
-
-    public function __construct(ClockService $clockService)
+    public function registerClock(int $id): string
     {
-        $this->clockService = $clockService;
+        $clockEvent = ClockEvent::create([
+            'user_id' => $id,
+            'timestamp' => Carbon::now(),
+        ]);
+
+        return 'Entrada registrada com sucesso em ' . $clockEvent->timestamp;
     }
 
-    // MAIN CLOCK LOGIC
-
-    public function registerClock(Request $request)
-    {
-        try {
-            $message = $this->clockService->registerClock($request['user_id']);
-            return response()->json(['message' => $message]);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Ocorreu um erro'], 500);
-        }
-    }
-
+    //REFATORAR O MONSTRO
     public function getClockEventsByPeriod(Request $request)
     {
         try {
@@ -60,113 +44,76 @@ class ClockController extends Controller
         }
     }
 
-    public function setDayOffForDate(Request $request)
+
+    //POSSIVELMENTE REFAZER
+    public function setDayOffForDate(array $data): string
     {
-        try {
-            $validatedData = $request->validate([
-                'user_id' => 'required',
-                'justification' => 'required',
-                'start_date' => 'required|date_format:Y-m-d',
-                'start_time' => 'required|date_format:H:i',
-                'end_date' => 'required|date_format:Y-m-d',
-                'end_time' => 'required|date_format:H:i',
-                'day_off' => 'required|boolean',
-                'doctor' => 'required|boolean',
+        $start = Carbon::createFromFormat('Y-m-d', $data['start_date']);
+        $end = Carbon::createFromFormat('Y-m-d', $data['end_date']);
+
+        $start_time = Carbon::createFromFormat('H:i', $data['start_time']);
+        $end_time = Carbon::createFromFormat('H:i', $data['end_time']);
+
+        for ($date = $start; $date->lte($end); $date->addDay()) {
+            ClockEvent::create([
+                'user_id' => $data['user_id'],
+                'timestamp' => $date->copy()->setTime($start_time->hour, $start_time->minute, 0)->format('Y-m-d H:i:s'),
+                'justification' => $data['justification'],
+                'day_off' => $data['day_off'],
+                'doctor' => $data['doctor'],
             ]);
-            
-            $start = Carbon::createFromFormat('Y-m-d', $validatedData['start_date']);
-            $end = Carbon::createFromFormat('Y-m-d', $validatedData['end_date']);
-            
-            $start_time = Carbon::createFromFormat('H:i', $validatedData['start_time']);
-            $end_time = Carbon::createFromFormat('H:i', $validatedData['end_time']);
-            
-            for ($date = $start; $date->lte($end); $date->addDay()) {
-                ClockEvent::create([
-                    'user_id' => $validatedData['user_id'],
-                    'timestamp' => $date->copy()->setTime($start_time->hour, $start_time->minute, 0)->format('Y-m-d H:i:s'),
-                    'justification' => $validatedData['justification'],
-                    'day_off' => $validatedData['day_off'],
-                    'doctor' => $validatedData['doctor'],
-                ]);
-                
-                ClockEvent::create([
-                    'user_id' => $validatedData['user_id'],
-                    'timestamp' => $date->copy()->setTime($end_time->hour, $end_time->minute, 0)->format('Y-m-d H:i:s'),
-                    'justification' => $validatedData['justification'],
-                    'day_off' => $validatedData['day_off'],
-                    'doctor' => $validatedData['doctor'],
-                ]);
-            }
-            return response()->json(['message' => 'Folga atualizada com sucesso para o período de ' . $start->format('Y-m-d') . ' ' . $start_time->format('H:i') . ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i')]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Entrada inválida'], 400);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Ocorreu um erro'], 500);
+
+            ClockEvent::create([
+                'user_id' => $data['user_id'],
+                'timestamp' => $date->copy()->setTime($end_time->hour, $end_time->minute, 0)->format('Y-m-d H:i:s'),
+                'justification' => $data['justification'],
+                'day_off' => $data['day_off'],
+                'doctor' => $data['doctor'],
+            ]);
         }
+        return 'Folga atualizada com sucesso para o período de ' . 
+                $start->format('Y-m-d') . ' ' . $start_time->format('H:i') . 
+                ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i');
     }
 
     //CLOCK CRUD
 
-    public function getAllUserClockEntries(int $id)
+    public function getAllUserClockEntries(int $id): array
     {
-        try {
-            $clockEvents = $this->clockService->getAllUserClockEntries($id);
-            return response()->json($clockEvents);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Usuário não encontrado'], 404);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Erro ao buscar as entradas'], 500);
+        return ClockEvent::where('user_id', $id)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->toArray();
+    }
+
+    public function deleteClockEntry(int $clock_id): string
+    {
+        $clockEvent = ClockEvent::find($clock_id);
+        if ($clockEvent) {
+            $clockEvent->delete();
+            return 'Entrada deletada com sucesso';
         }
     }
 
-    public function deleteClockEntry($clock_id)
+    public function insertClockEntry(array $data): string
     {
-        try {
-            $message = $this->clockService->deleteClockEntry($clock_id);
-            return response()->json(['message' => $message]);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Entrada não encontrada'], 404);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Erro ao deletar a entrada'], 500);
+        $clockEvent = ClockEvent::create($data);
+        return 'Entrada inserida com sucesso em ' . $clockEvent->timestamp;
+    }
+
+    public function updateClockEntry(array $data): string
+    {
+        $clockEvent = ClockEvent::find($data['id']);
+        if ($clockEvent) {
+            $clockEvent->update($data);
+            return 'Entrada atualizada com sucesso';
         }
     }
 
-    public function insertClockEntry(InsertClockEntryRequest $request)
+    public function deleteAllClockEntries(): string
     {
-        try {
-            $message = $this->clockService->insertClockEntry($request->all());
-            return response()->json(['message' => $message], 200);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Erro ao inserir a entrada'], 500);
-        }
-    }
-
-    public function updateClockEntry(Request $request)
-    {
-        try {
-            $message = $this->clockService->updateClockEntry($request->all());
-            return response()->json(['message' => $message], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Entrada não encontrada'], 404);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Erro ao atualizar a entrada'], 500);
-        }
-    }
-
-    public function deleteAllClockEntries()
-    {
-        try {
-            $message = $this->clockService->deleteAllClockEntries();
-            return response()->json(['message' => $message]);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'Erro ao deletar as entradas'], 500);
-        }
+        ClockEvent::truncate();
+        return 'Todas as entradas foram deletadas com sucesso';
     }
 
     //HOUR CALCULATION
@@ -267,16 +214,16 @@ class ClockController extends Controller
     {
         $sign = $hoursDecimal < 0 ? '-' : '';
         $hoursDecimal = abs($hoursDecimal);
-    
+
         $hours = intval($hoursDecimal);
         $decimalHours = $hoursDecimal - $hours;
         $minutes = round($decimalHours * 60);
-    
+
         if ($minutes == 60) {
             $hours += 1;
             $minutes = 0;
         }
-    
+
         return sprintf("%s%d:%02d", $sign, $hours, $minutes);
     }
 
@@ -333,7 +280,7 @@ class ClockController extends Controller
         return $this->groupClockEventsByDate($query)
             ->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
                 list($normalEvents, $dayOffEvents) = $this->separateEvents($eventsForDate);
-    
+
                 $normalEvents = $normalEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
@@ -341,16 +288,16 @@ class ClockController extends Controller
                 $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
                     return $this->createEventData($event, $index);
                 });
-    
+
                 $events = collect($normalEvents)->concat($dayOffEvents);
 
                 $day = $eventsForDate->first()->timestamp;
 
                 $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-    
+
                 list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
-    
+
                 return $this->createEntryData(
                     $day,
                     $expectedWorkHoursOnDay,
@@ -366,15 +313,15 @@ class ClockController extends Controller
     private function generateReport($clockEvents, $user)
     {
         list($totalTimeWorkedInSeconds, $totalNormalHours) = $this->calculateTotalTimeAndNormalHours($clockEvents);
-    
+
         $expectedWorkJourneyHoursForPeriod = $clockEvents->map(function ($clockEvent) {
             return $this->convertTimeToDecimal($clockEvent['expected_work_hours_on_day']);
         })->sum();
-    
+
         $totalHourBalance = $clockEvents->map(function ($clockEvent) {
             return $this->convertTimeToDecimal($clockEvent['balance_hours_on_day']);
         })->sum();
-    
+
         return $this->createReportData(
             $user,
             $totalTimeWorkedInSeconds,
