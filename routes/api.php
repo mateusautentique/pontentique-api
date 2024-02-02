@@ -27,7 +27,7 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
-        Route::post('/userEntries', [ClockController::class, 'getClockEventsByPeriod']);
+        Route::post('/userEntries', [ClockController::class, 'getClockReport']);
         Route::post('/ticket', [TicketController::class, 'createTicket']);
     });
 

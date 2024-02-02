@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use App\Http\Resources\EventDataResource;
+use App\Http\Resources\EntryDataResource;
+use App\Http\Resources\DefaultEntryDataResource;
+use App\Http\Resources\ReportDataResource;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Carbon\Carbon;
@@ -22,30 +24,18 @@ class ClockService
         return 'Entrada registrada com sucesso em ' . $clockEvent->timestamp;
     }
 
-    //REFATORAR O MONSTRO
-    public function getClockEventsByPeriod(Request $request)
+    public function getClockReport(array $request): ReportDataResource
     {
-        try {
-            $data = $this->validateDataIntoQuery($request);
-            $query = $data['query'];
-            $user = $data['user'];
-            $workJourneyHoursInSec = $user->work_journey_hours * 3600;
+        $user = User::find($request['user_id']);
 
-            $clockEvents = $this->getClockEvents($query, $workJourneyHoursInSec);
+        $query = $this->generateQuery($request, $user);
 
-            $clockEvents = $this->fillMissingDays($request, $clockEvents, $user->work_journey_hours);
+        $clockEvents = $this->getClockEvents($query, $user->work_journey_hours * 3600);
+        $clockEvents = $this->fillMissingDays($request, $clockEvents, $user->work_journey_hours);
 
-            return response()->json($this->generateReport($clockEvents, $user));
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Invalid input'], 400);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return response()->json(['message' => 'An error occurred'], 500);
-        }
+        return $this->generateReport($clockEvents, $user);
     }
 
-
-    //POSSIVELMENTE REFAZER
     public function setDayOffForDate(array $data): string
     {
         $start = Carbon::createFromFormat('Y-m-d', $data['start_date']);
@@ -168,32 +158,21 @@ class ClockService
 
     //UTILS
 
-    //DATA VALIDATION
+    //DATE FORMATTING
 
-    private function validateDataIntoQuery(Request $request)
+    private function generateQuery(array $timestamps, User $user)
     {
-        $validatedData = $request->validate([
-            'user_id' => 'required',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-        ]);
-
-        $userId = $validatedData['user_id'];
-        $user = User::find($userId);
         $userCreatedDate = $user->created_at ?? Carbon::minValue();
 
-        $startDate = $validatedData['start_date'] ?? $userCreatedDate;
-        $endDate = $validatedData['end_date'] ?? Carbon::now();
+        $startDate = $timestamps['start_date'] ?? $userCreatedDate;
+        $endDate = $timestamps['end_date'] ?? Carbon::now();
 
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate)->endOfDay();
 
-        return [
-            'query' => ClockEvent::where('user_id', $userId)
+        return ClockEvent::where('user_id', $user->id)
                 ->with('user')
-                ->whereBetween('timestamp', [$startDate, $endDate]),
-            'user' => $user
-        ];
+                ->whereBetween('timestamp', [$startDate, $endDate]);
     }
 
     private function getDateRange($request)
@@ -282,20 +261,19 @@ class ClockService
                 list($normalEvents, $dayOffEvents) = $this->separateEvents($eventsForDate);
 
                 $normalEvents = $normalEvents->map(function ($event, $index) {
-                    return $this->createEventData($event, $index);
+                    $event->index = $index;
+                    return new EventDataResource($event);
                 });
-
+                
                 $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
-                    return $this->createEventData($event, $index);
+                    $event->index = $index;
+                    return new EventDataResource($event);
                 });
-
-                $events = collect($normalEvents)->concat($dayOffEvents);
 
                 $day = $eventsForDate->first()->timestamp;
-
+                $events = collect($normalEvents)->concat($dayOffEvents);
                 $expectedWorkHoursOnDay = ($workJourneyHoursInSec - $this->calculateTotalTime($dayOffEvents));
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
-
                 list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
 
                 return $this->createEntryData(
@@ -332,24 +310,10 @@ class ClockService
         );
     }
 
-    //RESPONSE CREATION
-
-    private function createEventData($event, $index)
-    {
-        return [
-            'id' => $event->id,
-            'timestamp' => $event->timestamp->format('Y-m-d H:i:s'),
-            'justification' => $event->justification,
-            'type' => $index % 2 == 0 ? 'clock_in' : 'clock_out',
-            'day_off' => $event->day_off,
-            'doctor' => $event->doctor,
-            'controlId' => $event->control_id,
-        ];
-    }
-
+    //RESPONSE FORMATTING
     private function createEntryData($day, $expectedWorkHoursOnDay, $normalHoursInSec, $extraHoursInSec, $totalTimeWorkedInSec, $eventsForDate, $events)
     {
-        return [
+        return new EntryDataResource([
             'day' => $day->format('Y-m-d'),
             'expected_work_hours_on_day' => $this->convertDecimalToTime($expectedWorkHoursOnDay / 3600),
             'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
@@ -361,25 +325,12 @@ class ClockService
             'total_time_worked_in_seconds' => $totalTimeWorkedInSec,
             'event_count' => $eventsForDate->count(),
             'events' => $events,
-        ];
-    }
-
-    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $expectedWorkJourneyHoursForPeriod, $totalHourBalance, $clockEvents)
-    {
-        return [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'total_expected_hours' => $this->convertDecimalToTime($expectedWorkJourneyHoursForPeriod),
-            'total_hours_worked' =>  $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
-            'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
-            'total_hour_balance' => $this->convertDecimalToTime($totalHourBalance),
-            'entries' => $clockEvents->values(),
-        ];
+        ]);
     }
 
     private function createDefaultEntryResponse($formattedDate, $isWeekend, $userWorkJourneyHours)
     {
-        $eventData = [
+        return new DefaultEntryDataResource([
             'day' => $formattedDate,
             'expected_work_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
             'normal_hours_worked_on_day' => '0:00',
@@ -388,8 +339,19 @@ class ClockService
             'total_time_worked_in_seconds' => 0,
             'event_count' => 0,
             'events' => [],
-        ];
+        ]);
+    }
 
-        return $eventData;
+    private function createReportData($user, $totalTimeWorkedInSeconds, $totalNormalHours, $expectedWorkJourneyHoursForPeriod, $totalHourBalance, $clockEvents)
+    {
+        return new ReportDataResource([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'total_expected_hours' => $this->convertDecimalToTime($expectedWorkJourneyHoursForPeriod),
+            'total_hours_worked' =>  $this->convertDecimalToTime($totalTimeWorkedInSeconds / 3600),
+            'total_normal_hours_worked' => $this->convertDecimalToTime($totalNormalHours),
+            'total_hour_balance' => $this->convertDecimalToTime($totalHourBalance),
+            'entries' => $clockEvents->values(),
+        ]);
     }
 }
