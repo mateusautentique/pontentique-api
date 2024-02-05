@@ -4,13 +4,13 @@ namespace App\Services;
 
 use App\Http\Resources\EventDataResource;
 use App\Http\Resources\EntryDataResource;
-use App\Http\Resources\DefaultEntryDataResource;
 use App\Http\Resources\ReportDataResource;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ClockService
 {
@@ -27,6 +27,9 @@ class ClockService
     public function getClockReport(array $request): ReportDataResource
     {
         $user = User::find($request['user_id']);
+        if (!$user) {
+            throw new ModelNotFoundException;
+        }
 
         $query = $this->generateQuery($request, $user);
 
@@ -330,7 +333,7 @@ class ClockService
 
     private function createDefaultEntryResponse($formattedDate, $isWeekend, $userWorkJourneyHours)
     {
-        return new DefaultEntryDataResource([
+        return new EntryDataResource([
             'day' => $formattedDate,
             'expected_work_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
             'normal_hours_worked_on_day' => '0:00',
