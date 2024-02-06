@@ -77,6 +77,17 @@ class ClockController extends Controller
         }
     }
 
+    public function getDeletedClockEntries()
+    {
+        try {
+            $clockEvents = $this->clockService->getDeletedEntries();
+            return response()->json($clockEvents);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => 'Erro ao buscar as entradas'], 500);
+        }
+    }
+
     public function deleteClockEntry($clock_id)
     {
         try {

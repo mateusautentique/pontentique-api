@@ -12,11 +12,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamp('timestamp');
-            $table->timestamps();
             $table->string('justification')->nullable();
             $table->boolean('day_off')->default(false);
             $table->boolean('doctor')->default(false);
             $table->boolean('control_id')->default(false);
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

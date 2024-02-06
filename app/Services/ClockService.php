@@ -67,9 +67,9 @@ class ClockService
                 'doctor' => $data['doctor'],
             ]);
         }
-        return 'Folga atualizada com sucesso para o período de ' . 
-                $start->format('Y-m-d') . ' ' . $start_time->format('H:i') . 
-                ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i');
+        return 'Folga atualizada com sucesso para o período de ' .
+            $start->format('Y-m-d') . ' ' . $start_time->format('H:i') .
+            ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i');
     }
 
     //CLOCK CRUD
@@ -80,6 +80,12 @@ class ClockService
             ->orderBy('id', 'desc')
             ->get()
             ->toArray();
+    }
+
+    public function getDeletedEntries()
+    {
+        $deletedClockEvents = ClockEvent::onlyTrashed()->get()->makeVisible('deleted_at');
+        return $deletedClockEvents;
     }
 
     public function deleteClockEntry(int $clock_id): string
@@ -136,9 +142,11 @@ class ClockService
         return $totalTime;
     }
 
-    private function calculateWorkHours(int $totalTimeWorked, float $workJourneyHoursForDay,
-                                        float $defaultWorkJourneyHours = 8): array
-    {
+    private function calculateWorkHours(
+        int $totalTimeWorked,
+        float $workJourneyHoursForDay,
+        float $defaultWorkJourneyHours = 8
+    ): array {
         $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay);
         $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
         if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {
@@ -178,8 +186,8 @@ class ClockService
         $endDate = Carbon::parse($endDate)->endOfDay();
 
         return ClockEvent::where('user_id', $user->id)
-                ->with('user')
-                ->whereBetween('timestamp', [$startDate, $endDate]);
+            ->with('user')
+            ->whereBetween('timestamp', [$startDate, $endDate]);
     }
 
     private function getDateRange(array $request): object
@@ -271,7 +279,7 @@ class ClockService
                     $event->index = $index;
                     return new EventDataResource($event);
                 });
-                
+
                 $dayOffEvents = $dayOffEvents->map(function ($event, $index) {
                     $event->index = $index;
                     return new EventDataResource($event);
@@ -318,10 +326,15 @@ class ClockService
     }
 
     //RESPONSE FORMATTING
-    private function createEntryData(object $day, int $expectedWorkHoursOnDay, int $normalHoursInSec,
-                                     int $extraHoursInSec, int $totalTimeWorkedInSec, object $eventsForDate,
-                                     object $events): EntryDataResource
-    {
+    private function createEntryData(
+        object $day,
+        int $expectedWorkHoursOnDay,
+        int $normalHoursInSec,
+        int $extraHoursInSec,
+        int $totalTimeWorkedInSec,
+        object $eventsForDate,
+        object $events
+    ): EntryDataResource {
         return new EntryDataResource([
             'day' => $day->format('Y-m-d'),
             'expected_work_hours_on_day' => $this->convertDecimalToTime($expectedWorkHoursOnDay / 3600),
@@ -337,9 +350,11 @@ class ClockService
         ]);
     }
 
-    private function createDefaultEntryResponse(string $formattedDate, bool $isWeekend,
-                                                 int $userWorkJourneyHours): EntryDataResource
-    {
+    private function createDefaultEntryResponse(
+        string $formattedDate,
+        bool $isWeekend,
+        int $userWorkJourneyHours
+    ): EntryDataResource {
         return new EntryDataResource([
             'day' => $formattedDate,
             'expected_work_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
@@ -352,10 +367,14 @@ class ClockService
         ]);
     }
 
-    private function createReportData(User $user, int $totalTimeWorkedInSeconds, float $totalNormalHours,
-                                      int $expectedWorkJourneyHoursForPeriod, float $totalHourBalance,
-                                      object $clockEvents): ReportDataResource
-    {
+    private function createReportData(
+        User $user,
+        int $totalTimeWorkedInSeconds,
+        float $totalNormalHours,
+        int $expectedWorkJourneyHoursForPeriod,
+        float $totalHourBalance,
+        object $clockEvents
+    ): ReportDataResource {
         return new ReportDataResource([
             'user_id' => $user->id,
             'user_name' => $user->name,

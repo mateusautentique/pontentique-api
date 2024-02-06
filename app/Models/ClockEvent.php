@@ -1,13 +1,13 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClockEvent extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -22,7 +22,9 @@ class ClockEvent extends Model
         'timestamp' => 'datetime',
     ];
 
-    protected $dates = ['timestamp'];
+    protected $dates = ['timestamp', 'deleted_at'];
+
+    protected $hidden = ['deleted_at'];
 
     public function user()
     {
