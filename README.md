@@ -148,33 +148,44 @@ A resposta deve ser um JSON contendo diversos atributos do usuário logado.
 
 Recebe-se uma resposta em texto plano com o registro de todas as ações de ponto e usuário, no formato AMC.
 
+```
+000000000CC1234567890000000064220240206142720000
+000000001CC1234567890000000064320240207080000100AFD test
+000000002CU1234567890000000064320240207080059100AFD test22222222222222222222222222
+000000003CU1234567890000000064320240207080059000AFD test22222222222222222222222222
+000000004CD1234567890000000064320240207080059000AFD test22222222222222222222222222
+000000005UC12345678908001200240206144552Jairo Teste Nunes2
+```
+
 O formato é o seguinte:
 
-# Registro de Ponto
+### Registro de Ponto
 
-| Campo                   | Descrição                                                                     | Formato                            | Tamanho          |
-| ----------------------- | ----------------------------------------------------------------------------- | ---------------------------------- | ---------------- |
-| NSR                     | Identificador único de cada ação                                              | 000000000                          | 9                |
-| TIPO                    | Ação do registro                                                              | C, U, D (Create, Update ou Delete) | 1                |
-| USER CPF                | CPF do usuário                                                                | 00000000000                        | 11               |
-| ID DO REGISTRO DE PONTO | ID do registro de ponto                                                       | 000000000                          | 9                |
-| TIMESTAMP               | Timestamp editada, caso o registro for uma edição, representa a data alterada | YYYYMMDDHHIISS                     | 14               |
-| DAYOFF                  | Horário representado como uma folga                                           | 0, 1                               | 1                |
-| DOCTOR                  | Horário representado como um atestado                                         | 0, 1                               | 1                |
-| CONTROLID               | Registro de ponto foi importado da máquina                                    | 0, 1                               | 1                |
-| JUSTIFICATION           | Justificativa do registro, caso for nula, esse campo fica em branco           | Texto                              | 0-255 caracteres |
+| Campo                   | Descrição                                                                     | Formato                              | Tamanho          |
+| ----------------------- | ----------------------------------------------------------------------------- | ------------------------------------ | ---------------- |
+| NSR                     | Identificador único de cada ação                                              | 000000000                            | 9                |
+| MODELO                  | Tipo de registro                                                              | C, U (Clock (Ponto), User (Usuário)) | 1                |
+| TIPO                    | Ação do registro                                                              | C, U, D (Create, Update ou Delete)   | 1                |
+| USER CPF                | CPF do usuário                                                                | 00000000000                          | 11               |
+| ID DO REGISTRO DE PONTO | ID do registro de ponto                                                       | 000000000                            | 9                |
+| TIMESTAMP               | Timestamp editada, caso o registro for uma edição, representa a data alterada | YYYYMMDDHHIISS                       | 14               |
+| DAYOFF                  | Horário representado como uma folga                                           | 0, 1                                 | 1                |
+| DOCTOR                  | Horário representado como um atestado                                         | 0, 1                                 | 1                |
+| CONTROLID               | Registro de ponto foi importado da máquina                                    | 0, 1                                 | 1                |
+| JUSTIFICATION           | Justificativa do registro, caso for nula, esse campo fica em branco           | Texto                                | 0-255 caracteres |
 
 ### Registro de Usuário
 
-| Campo         | Descrição                              | Formato                          | Tamanho          |
-| ------------- | -------------------------------------- | -------------------------------- | ---------------- |
-| NSR           | Identificador único de cada ação       | 000000000                        | 9                |
-| TIPO          | Ação do registro                       | C, U, D (Create, Update, Delete) | 1                |
-| USER CPF      | CPF do usuário                         | 00000000000                      | 11               |
-| ID DO USUÁRIO | ID do usuário                          | 0000                             | 4                |
-| ROLE          | Permissão do usuário                   | Admin -> 1, User -> 0            | 1                |
-| TIMESTAMP     | YYYYMMDDHHMMSS (Updated_at do usuário) | Data e Hora                      | 14               |
-| NOME          | 0-255                                  | Texto                            | 0-255 caracteres |
+| Campo         | Descrição                              | Formato                              | Tamanho          |
+| ------------- | -------------------------------------- | ------------------------------------ | ---------------- |
+| NSR           | Identificador único de cada ação       | 000000000                            | 9                |
+| MODELO        | Tipo de registro                       | C, U (Clock (Ponto), User (Usuário)) | 1                |
+| TIPO          | Ação do registro                       | C, U, D (Create, Update, Delete)     | 1                |
+| USER CPF      | CPF do usuário                         | 00000000000                          | 11               |
+| ID DO USUÁRIO | ID do usuário                          | 0000                                 | 4                |
+| ROLE          | Permissão do usuário                   | Admin -> 1, User -> 0                | 1                |
+| TIMESTAMP     | YYYYMMDDHHMMSS (Updated_at do usuário) | Data e Hora                          | 14               |
+| NOME          | 0-255                                  | Texto                                | 0-255 caracteres |
 
 ------------------------------------------------------
 

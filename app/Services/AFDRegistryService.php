@@ -14,6 +14,7 @@ class AFDRegistryService
         });
 
         $nsr = str_pad($counter, 9, '0', STR_PAD_LEFT);
+        $model = 'C';
         $type = $action === 'create' ? 'C' : ($action === 'update' ? 'U' : 'D');
         $userCpf = str_pad($event->user->cpf, 11, '0', STR_PAD_LEFT);
         $id = str_pad($event->id, 9, '0', STR_PAD_LEFT);
@@ -23,7 +24,7 @@ class AFDRegistryService
         $controlId = $event->control_id ? '1' : '0';
         $justification = substr($event->justification, 0, 255);
 
-        $registry = $nsr . $type . $userCpf . $id . $timestamp . 
+        $registry = $nsr . $model . $type . $userCpf . $id . $timestamp . 
                     $dayOff . $doctor . $controlId . $justification;
 
         Cache::forever('afd_counter', $counter + 1);
@@ -38,6 +39,7 @@ class AFDRegistryService
         });
 
         $nsr = str_pad($counter, 9, '0', STR_PAD_LEFT);
+        $model = 'U';
         $type = $action === 'create' ? 'C' : ($action === 'update' ? 'U' : 'D');
         $userCpf = str_pad($user->cpf, 11, '0', STR_PAD_LEFT);
         $id = str_pad($user->id, 4, '0', STR_PAD_LEFT);
@@ -45,7 +47,7 @@ class AFDRegistryService
         $timestamp = $user->updated_at->format('YmdHis');
         $name = substr($user->name, 0, 255);
 
-        $registry = $nsr . $type . $userCpf . $id . $role . $timestamp . $name;
+        $registry = $nsr . $model . $type . $userCpf . $id . $role . $timestamp . $name;
 
         Cache::forever('afd_counter', $counter + 1);
 
@@ -68,6 +70,7 @@ class AFDRegistryService
     /*
     /   Registro de ponto
     /   NSR: 000000000
+    /   MODELO: U, C -> (User, Clock)
     /   TIPO: C, U, D -> (Create, Update, Delete)
     /   USER CPF: 00000000000
     /   ID DO REGISTRO DE PONTO: 000000000
@@ -82,6 +85,7 @@ class AFDRegistryService
     /*
     /   Registro de usuário
     /   NSR: 000000000
+    /   MODELO: U, C -> (User, Clock)
     /   TIPO: C, U, D-> (Create, Update, Delete)
     /   USER CPF: 00000000000
     /   ID DO USUÁRIO: 0000
