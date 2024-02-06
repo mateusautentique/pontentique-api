@@ -19,6 +19,9 @@ class ClockService
         $clockEvent = ClockEvent::create([
             'user_id' => $id,
             'timestamp' => Carbon::now(),
+            'day_off' => false,
+            'doctor' => false,
+            'control_id' => false,
         ]);
 
         return 'Entrada registrada com sucesso em ' . $clockEvent->timestamp;
