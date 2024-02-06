@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('work_journey_hours')->default(8);
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
