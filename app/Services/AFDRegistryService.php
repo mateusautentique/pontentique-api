@@ -57,6 +57,12 @@ class AFDRegistryService
         $filePath = base_path('infra/AFDRegistryFile.txt');
         file_put_contents($filePath, $registry . PHP_EOL, FILE_APPEND);
     }
+
+    public function getAFD(): string
+    {
+        $filePath = base_path('infra/AFDRegistryFile.txt');
+        return file_get_contents($filePath);
+    }
 }
     
     /*
