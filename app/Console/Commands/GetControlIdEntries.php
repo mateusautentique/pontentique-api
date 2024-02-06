@@ -33,18 +33,19 @@ class GetControlIdEntries extends Command
     {
         try {
             $session = $this->loginControlId()['session'];
-    
+
             $afd = $this->getAFD($session);
-    
+
             $this->decodeAFD($afd);
-    
+
             $this->logoutControlId($session);
         } catch (\Exception $e) {
             Log::error($e->getMessage());
         }
     }
 
-    private function loginControlId(){
+    private function loginControlId()
+    {
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
         ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/login.fcgi', [
@@ -55,7 +56,8 @@ class GetControlIdEntries extends Command
         return $response->json();
     }
 
-    private function logoutControlId($session){
+    private function logoutControlId($session)
+    {
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
         ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/logout.fcgi', [
@@ -65,7 +67,8 @@ class GetControlIdEntries extends Command
         return $response->json();
     }
 
-    private function getAFD($session){
+    private function getAFD($session)
+    {
         $response = Http::withHeaders([
             'Content-Type' => 'application/json'
         ])->withoutVerifying()->post(env('CONTROL_ID_MACHINE_HOST') . '/get_afd.fcgi', [
@@ -76,31 +79,35 @@ class GetControlIdEntries extends Command
         return $response->body();
     }
 
-    private function decodeAFD($afd){
+    private function decodeAFD($afd)
+    {
         $lines = explode("\n", $afd);
-    
+
         $users = User::all()->keyBy('cpf');
-    
-        foreach($lines as $line){
-            if ($line[9] == '3'){
-                $date = substr($line, 10, 14);
-                $timestamp = $this->dateFormat($date);
-                $cpf = substr($line, 23, 11);
-    
-                $user = $users->get($cpf);
-    
-                if ($user){
-                    ClockEvent::firstOrCreate([
-                        'user_id' => $user->id, 
-                        'timestamp' => $timestamp,
-                        'controlId' => true,
-                    ]);
-                }
+
+        foreach ($lines as $line) {
+            if ($line[9] != '3') {
+                return;
+            }
+
+            $date = substr($line, 10, 14);
+            $timestamp = $this->dateFormat($date);
+            $cpf = substr($line, 23, 11);
+
+            $user = $users->get($cpf);
+
+            if ($user) {
+                ClockEvent::firstOrCreate([
+                    'user_id' => $user->id,
+                    'timestamp' => $timestamp,
+                    'control_id' => true,
+                ]);
             }
         }
     }
 
-    private function dateFormat($dateString) {
+    private function dateFormat($dateString)
+    {
         $date = DateTime::createFromFormat('dmYHis', $dateString);
         return $date->format('Y-m-d H:i:s');
     }
