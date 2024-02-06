@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up()
     {
+        if (Schema::hasColumn('clock_events', 'deleted_at')) {
+            return;
+        }
+    
         Schema::table('clock_events', function (Blueprint $table) {
             $table->softDeletes();
         });
@@ -15,6 +19,10 @@ return new class extends Migration
     
     public function down()
     {
+        if (!Schema::hasColumn('clock_events', 'deleted_at')) {
+            return;
+        }
+    
         Schema::table('clock_events', function (Blueprint $table) {
             $table->dropSoftDeletes();
         });
