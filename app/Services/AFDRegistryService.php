@@ -42,10 +42,10 @@ class AFDRegistryService
         $userCpf = str_pad($user->cpf, 11, '0', STR_PAD_LEFT);
         $id = str_pad($user->id, 4, '0', STR_PAD_LEFT);
         $role = $user->role === 'admin' ? 1 : 0;
-        $name = substr($user->name, 0, 255);
         $timestamp = $user->updated_at->format('YmdHis');
+        $name = substr($user->name, 0, 255);
 
-        $registry = $nsr . $type . $userCpf . $id . $role . $name . $timestamp;
+        $registry = $nsr . $type . $userCpf . $id . $role . $timestamp . $name;
 
         Cache::forever('afd_counter', $counter + 1);
 

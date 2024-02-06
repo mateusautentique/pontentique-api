@@ -7,9 +7,9 @@ Até o momento, a API possui as seguintes funcionalidades:
 - Armazenamento e autenticação de usuários
 - Registro de batidas de ponto
 - Relatórios sobre batidas de ponto
-- Cálculo de horas trabalhadas e valor a receber
 - Inserção, atualização e remoção de batidas de ponto manualmente
 - Sistema de tickets, que podem ser aceitos ou não por administradores
+- Gerar uma AFD com todas as ações de ponto ou usuário
 
 Abaixo, estarão listados alguns exemplos de requisições. Todos elas (exceto registro e login) requerem um token de autenticação válido, caso contrário, elas retornam um erro **401** (*Unauthorized*).
 
@@ -27,6 +27,7 @@ Todas as requisições (com excessão as de autenticação) são divididas em *u
 Todas as requisições devem conter um header `Accept` com o valor `application/json`.
 
 - Header
+
 ```json
 "Accept": "application/json"
 ```
@@ -139,6 +140,42 @@ A resposta deve ser um JSON contendo diversos atributos do usuário logado.
 }
 ```
 
+## Gerar relatório AFD
+
+`GET` para http://localhost/api/getAFD
+
+- Response
+
+Recebe-se uma resposta em texto plano com o registro de todas as ações de ponto e usuário, no formato AMC.
+
+O formato é o seguinte:
+
+# Registro de Ponto
+
+| Campo                   | Descrição                                                                     | Formato                            | Tamanho          |
+| ----------------------- | ----------------------------------------------------------------------------- | ---------------------------------- | ---------------- |
+| NSR                     | Identificador único de cada ação                                              | 000000000                          | 9                |
+| TIPO                    | Ação do registro                                                              | C, U, D (Create, Update ou Delete) | 1                |
+| USER CPF                | CPF do usuário                                                                | 00000000000                        | 11               |
+| ID DO REGISTRO DE PONTO | ID do registro de ponto                                                       | 000000000                          | 9                |
+| TIMESTAMP               | Timestamp editada, caso o registro for uma edição, representa a data alterada | YYYYMMDDHHIISS                     | 14               |
+| DAYOFF                  | Horário representado como uma folga                                           | 0, 1                               | 1                |
+| DOCTOR                  | Horário representado como um atestado                                         | 0, 1                               | 1                |
+| CONTROLID               | Registro de ponto foi importado da máquina                                    | 0, 1                               | 1                |
+| JUSTIFICATION           | Justificativa do registro, caso for nula, esse campo fica em branco           | Texto                              | 0-255 caracteres |
+
+### Registro de Usuário
+
+| Campo         | Descrição                              | Formato                          | Tamanho          |
+| ------------- | -------------------------------------- | -------------------------------- | ---------------- |
+| NSR           | Identificador único de cada ação       | 000000000                        | 9                |
+| TIPO          | Ação do registro                       | C, U, D (Create, Update, Delete) | 1                |
+| USER CPF      | CPF do usuário                         | 00000000000                      | 11               |
+| ID DO USUÁRIO | ID do usuário                          | 0000                             | 4                |
+| ROLE          | Permissão do usuário                   | Admin -> 1, User -> 0            | 1                |
+| TIMESTAMP     | YYYYMMDDHHMMSS (Updated_at do usuário) | Data e Hora                      | 14               |
+| NOME          | 0-255                                  | Texto                            | 0-255 caracteres |
+
 ------------------------------------------------------
 
 # Requisições de usuários
@@ -170,17 +207,7 @@ A resposta deve conter um JSON com informações de todos os usuários cadastrad
 
 ## Listar um usuário específico
 
-`GET` para http://localhost/api/admin/manageUsers/user/
-
-- Body
-
-A requisição deve conter um JSON com o id do usuário a ser buscado:
-
-```json
-{
-    "user_id": 1
-}
-```
+`GET` para http://localhost/api/admin/manageUsers/user/{id}
 
 - Response
 
@@ -251,17 +278,7 @@ A resposta deve conter um JSON com uma mensagem indicando que o usuário foi del
 
 ## Verificar status do usuário
 
-`POST` para http://localhost/api/admin/manageUsers/user/status
-
-- Body
-
-A requisição deve conter um JSON com o id do usuário a ser buscado:
-
-```json
-{
-    "user_id": 1
-}
-```
+`POST` para http://localhost/api/admin/manageUsers/user/status/{id}
 
 - Response
 
@@ -303,7 +320,7 @@ Exemplo:
 
 ## Listar todos os pontos de um usuário
 
-`GET` para http://localhost/api/admin/userEntries
+`GET` para http://localhost/api/admin/userEntries/{id}
 
 - Response
 
@@ -552,19 +569,7 @@ Exemplo:
 
 ## Deletar um ponto manualmente
 
-`DELETE` para http://localhost/api/admin/userEntries/
-
-- Body
-
-O body da requisição deve conter um campo "id", que representa o id do ponto.
-
-Exemplo:
-
-```json
-{
-    "id": 15
-}
-```
+`DELETE` para http://localhost/api/admin/userEntries/{id}
 
 - Response
 

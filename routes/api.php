@@ -24,7 +24,7 @@ Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/getAFD', [AFDController::class, 'getAFD']);
+    Route::get('/getAFD', [AFDController::class, 'getAFD']);
 
     Route::prefix('user')->group(function () {
         Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
