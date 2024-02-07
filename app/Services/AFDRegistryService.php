@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\ClockEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class AFDRegistryService
 {
@@ -56,14 +57,14 @@ class AFDRegistryService
 
     function sendRegistryLine(string $registry): void
     {
-        $filePath = base_path('infra/AFDRegistryFile.txt');
-        file_put_contents($filePath, $registry . PHP_EOL, FILE_APPEND);
+        $filePath = 'AFDRegistryFile.txt';
+        Storage::disk('local')->append($filePath, $registry);
     }
 
-    public function getAFD(): string
+    public function getAFD()
     {
-        $filePath = base_path('infra/AFDRegistryFile.txt');
-        return file_get_contents($filePath);
+        $filePath = 'AFDRegistryFile.txt';
+        return Storage::disk('local')->get($filePath);
     }
 }
     

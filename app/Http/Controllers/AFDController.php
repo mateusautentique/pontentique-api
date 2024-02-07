@@ -13,7 +13,7 @@ class AFDController extends Controller
         $this->afdRegistryService = $afdRegistryService;
     }
 
-    public function getAFD(): string
+    public function getAFD()
     {
         try {
             return $this->afdRegistryService->getAFD();
