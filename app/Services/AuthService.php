@@ -14,6 +14,8 @@ class AuthService
     public function register(array $data): string
     {
         $data['password'] = Hash::make($data['password']);
+        $data['role'] = User::where('role', 'admin')->exists() ? 'user' : 'admin';
+
         $user = User::create($data);
         return $user->createToken('userToken')->accessToken;
     }
