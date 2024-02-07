@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\AuthService;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -22,8 +23,8 @@ class AuthController extends Controller
             $token = $this->authService->register($request->validated());
             return response(['token' => $token], 200);
         } catch (\Exception $e) {
-            return response([
-                'message' => $e->getMessage(), 
+            return response()->json([
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -33,10 +34,10 @@ class AuthController extends Controller
         try {
             $token = $this->authService->login($request->validated());
             return response(['token' => $token], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
         } catch (\Exception $e) {
-            return response([
-                'message' => $e->getMessage(), 
-            ], 500);
+            return response([ 'message' => $e->getMessage()], 500);
         }
     }
 

@@ -7,30 +7,27 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class AuthService
 {
     public function register(array $data): string
     {
-        try {
-            $data['password'] = Hash::make($data['password']);
-            $user = User::create($data);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'User registration failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-
+        $data['password'] = Hash::make($data['password']);
+        $user = User::create($data);
         return $user->createToken('userToken')->accessToken;
     }
 
-    public function login(array $data): string
+    public function login(array $data)
     {
         $user = User::where('cpf', $data['cpf'])->first();
-        if ($user && Hash::check($data['password'], $user->password)) {
-            return $user->createToken('userToken')->accessToken;
+        if (!$user) {
+            throw new ModelNotFoundException('Usuário não encontrado');
         }
+        if (!Hash::check($data['password'], $user->password)) {
+            throw new \Exception('Credenciais inválidas');
+        }
+        return $user->createToken('userToken')->accessToken;
     }
 
     public function logout(User $user): string
