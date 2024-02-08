@@ -23,6 +23,7 @@ class ClockService
             'day_off' => false,
             'doctor' => false,
             'control_id' => false,
+            'rh_id' => false,
         ]);
 
         return 'Entrada registrada com sucesso em ' . $clockEvent->timestamp;

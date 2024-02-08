@@ -16,6 +16,7 @@ return new class extends Migration
             $table->boolean('day_off')->default(false);
             $table->boolean('doctor')->default(false);
             $table->boolean('control_id')->default(false);
+            $table->boolean('rh_id')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });
