@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 
 class ClockService
 {
@@ -114,7 +115,9 @@ class ClockService
 
     public function deleteAllClockEntries(): string
     {
-        ClockEvent::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('clock_events')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         return 'Todas as entradas foram deletadas com sucesso';
     }
 

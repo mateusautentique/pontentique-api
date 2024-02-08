@@ -87,7 +87,7 @@ class GetControlIdEntries extends Command
 
         foreach ($lines as $line) {
             if ($line[9] != '3') {
-                return;
+                continue;
             }
 
             $date = substr($line, 10, 14);
@@ -100,6 +100,8 @@ class GetControlIdEntries extends Command
                 ClockEvent::firstOrCreate([
                     'user_id' => $user->id,
                     'timestamp' => $timestamp,
+                    'day_off' => false,
+                    'doctor' => false,
                     'control_id' => true,
                 ]);
             }

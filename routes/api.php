@@ -66,8 +66,8 @@ Route::middleware('auth:api')->group(function () {
         });
     });
 
-    // Route::prefix('test')->group(function () {
-    //     Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
-    //     Route::get('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
-    // });
+    Route::prefix('test')->group(function () {
+        Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
+        Route::delete('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
+    });
 });

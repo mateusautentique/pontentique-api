@@ -15,7 +15,7 @@ class EventDataResource extends JsonResource
             'type' => $this->index % 2 == 0 ? 'clock_in' : 'clock_out',
             'day_off' => $this->day_off,
             'doctor' => $this->doctor,
-            'controlId' => $this->control_id,
+            'control_id' => $this->control_id,
         ];
     }
 }
