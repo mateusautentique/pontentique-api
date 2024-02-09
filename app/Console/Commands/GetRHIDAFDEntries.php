@@ -9,13 +9,13 @@ use DateTime;
 
 class GetRHIDEntries extends Command
 {
-    //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:get-rh-id-entries"
+    //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:get-rh-id-afd-entries"
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:get-rh-id-entries';
+    protected $signature = 'app:get-rh-id-afd-entries';
 
     /**
      * The console command description.
@@ -29,7 +29,7 @@ class GetRHIDEntries extends Command
      */
     public function handle()
     {
-        $fileContents = file_get_contents('rhidafd.txt');
+        $fileContents = file_get_contents('rhid_afd/rhidafd.txt');
         $lines = explode("\n", $fileContents);
 
         $users = User::all()->keyBy('cpf');

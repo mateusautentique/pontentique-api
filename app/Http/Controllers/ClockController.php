@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ClockReportRequest;
 use App\Http\Requests\InsertClockEntryRequest;
 use App\Http\Requests\SetDayOffRequest;
+use App\Http\Requests\UpdateClockEntryRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -114,7 +115,7 @@ class ClockController extends Controller
         }
     }
 
-    public function updateClockEntry(Request $request)
+    public function updateClockEntry(UpdateClockEntryRequest $request)
     {
         try {
             $message = $this->clockService->updateClockEntry($request->all());

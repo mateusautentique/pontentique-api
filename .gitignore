@@ -19,4 +19,5 @@ yarn-error.log
 /.vscode
 /infra/mysql/db_data
 /infra/nginx_logs
-rhidafd.txt
+/rhid_afd/*
+*.DS_Store
