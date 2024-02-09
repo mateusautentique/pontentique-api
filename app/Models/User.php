@@ -7,7 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Services\AFDRegistryService;
+use App\Services\LogRegistryService;
 
 class User extends Authenticatable
 {
@@ -37,21 +37,21 @@ class User extends Authenticatable
 
     protected static function booted()
     {
-        $service = new AFDRegistryService();
+        $service = new LogRegistryService();
 
         static::created(function ($clockEvent) use ($service) {
-            $registry = $service->generateUserRegistryLine($clockEvent, 'create');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateUserLogLine($clockEvent, 'create');
+            $service->sendLogs($registry);
         });
 
         static::updated(function ($clockEvent) use ($service) {
-            $registry = $service->generateUserRegistryLine($clockEvent, 'update');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateUserLogLine($clockEvent, 'update');
+            $service->sendLogs($registry);
         });
 
         static::deleted(function ($clockEvent) use ($service) {
-            $registry = $service->generateUserRegistryLine($clockEvent, 'delete');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateUserLogLine($clockEvent, 'delete');
+            $service->sendLogs($registry);
         });
     }
 

@@ -6,11 +6,11 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
-class AFDRegistryService
+class LogRegistryService
 {
-    function generateClockRegistryLine(ClockEvent $event, string $action): string
+    function generateClockLogLine(ClockEvent $event, string $action): string
     {
-        $counter = Cache::rememberForever('afd_counter', function () {
+        $counter = Cache::rememberForever('log_counter', function () {
             return 0;
         });
 
@@ -28,14 +28,14 @@ class AFDRegistryService
         $registry = $nsr . $model . $type . $userCpf . $id . $timestamp . 
                     $dayOff . $doctor . $controlId . $justification;
 
-        Cache::forever('afd_counter', $counter + 1);
+        Cache::forever('log_counter', $counter + 1);
 
         return $registry;
     }
 
-    function generateUserRegistryLine(User $user, string $action): string
+    function generateUserLogLine(User $user, string $action): string
     {
-        $counter = Cache::rememberForever('afd_counter', function () {
+        $counter = Cache::rememberForever('log_counter', function () {
             return 0;
         });
 
@@ -50,20 +50,20 @@ class AFDRegistryService
 
         $registry = $nsr . $model . $type . $userCpf . $id . $role . $timestamp . $name;
 
-        Cache::forever('afd_counter', $counter + 1);
+        Cache::forever('log_counter', $counter + 1);
 
         return $registry;
     }
 
-    function sendRegistryLine(string $registry): void
+    function sendLogs(string $registry): void
     {
-        $filePath = 'AFDRegistryFile.txt';
+        $filePath = 'pontentique_logs.txt';
         Storage::disk('local')->append($filePath, $registry);
     }
 
-    public function getAFD()
+    public function getLogs()
     {
-        $filePath = 'AFDRegistryFile.txt';
+        $filePath = 'pontentique_logs.txt';
         return Storage::disk('local')->get($filePath);
     }
 }

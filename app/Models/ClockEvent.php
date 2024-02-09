@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Services\AFDRegistryService;
+use App\Services\LogRegistryService;
 
 class ClockEvent extends Model
 {
@@ -31,21 +31,21 @@ class ClockEvent extends Model
 
     protected static function booted()
     {
-        $service = new AFDRegistryService();
+        $service = new LogRegistryService();
 
         static::created(function ($clockEvent) use ($service) {
-            $registry = $service->generateClockRegistryLine($clockEvent, 'create');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateClockLogLine($clockEvent, 'create');
+            $service->sendLogs($registry);
         });
 
         static::updated(function ($clockEvent) use ($service) {
-            $registry = $service->generateClockRegistryLine($clockEvent, 'update');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateClockLogLine($clockEvent, 'update');
+            $service->sendLogs($registry);
         });
 
         static::deleted(function ($clockEvent) use ($service) {
-            $registry = $service->generateClockRegistryLine($clockEvent, 'delete');
-            $service->sendRegistryLine($registry);
+            $registry = $service->generateClockLogLine($clockEvent, 'delete');
+            $service->sendLogs($registry);
         });
     }
 

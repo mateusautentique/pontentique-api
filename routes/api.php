@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\AFDController;
+use App\Http\Controllers\LogController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
@@ -24,7 +24,7 @@ Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/getAFD', [AFDController::class, 'getAFD']);
+    Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
 
     Route::prefix('user')->group(function () {
         Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
@@ -66,8 +66,8 @@ Route::middleware('auth:api')->group(function () {
         });
     });
 
-    Route::prefix('test')->group(function () {
-        Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
-        Route::delete('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
-    });
+    // Route::prefix('test')->group(function () {
+    //     Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
+    //     Route::delete('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
+    // });
 });
