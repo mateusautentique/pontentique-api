@@ -26,6 +26,7 @@ class RegisterRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'cpf' => 'required|string|size:11|unique:users',
+            'pis' => 'required|string|size:11|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:5|confirmed',
         ];
@@ -39,8 +40,8 @@ class RegisterRequest extends FormRequest
             throw new HttpResponseException(response(['error' => $errors->first('password')], 494));
         }        
 
-        $fields = ['name', 'cpf', 'email', 'password'];
-        $statusCodes = [490, 491, 492, 493];
+        $fields = ['name', 'cpf', 'email', 'password', 'pis'];
+        $statusCodes = [490, 491, 492, 493, 495];
     
         foreach ($fields as $index => $field) {
             if ($errors->has($field)) {

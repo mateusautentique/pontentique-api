@@ -26,7 +26,8 @@ class InsertUserRequest extends FormRequest
         return [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'cpf' => 'required|unique:users',
+            'cpf' => 'required|unique:users|digits:11',
+            'pis' => 'required|unique:users|digits:11',
             'role' => 'sometimes|in:admin,user',
             'password' => 'required|confirmed'
         ];

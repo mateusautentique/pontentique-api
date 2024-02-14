@@ -18,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'cpf',
+        'pis',
         'role',
         'work_journey_hours'
     ];
