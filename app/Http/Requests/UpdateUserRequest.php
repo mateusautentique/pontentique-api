@@ -24,10 +24,10 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'user_id' => 'required|exists:users,id',
-            'name' => 'required',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($this->user_id)],
-            'cpf' => ['required', Rule::unique('users')->ignore($this->user_id), 'digits:11'],
-            'pis' => ['required', Rule::unique('users')->ignore($this->user_id), 'digits:11'],
+            'name' => 'sometimes',
+            'email' => ['sometimes', 'email', Rule::unique('users')->ignore($this->user_id)],
+            'cpf' => ['sometimes', Rule::unique('users')->ignore($this->user_id), 'digits:11'],
+            'pis' => ['sometimes', Rule::unique('users')->ignore($this->user_id), 'digits:11'],
             'role' => 'sometimes|in:admin,user',
             'password' => 'sometimes|confirmed',
             'work_journey_hours' => 'sometimes|numeric|min:0|max:24'

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\AFDService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AFDController extends Controller
 {
@@ -19,6 +20,17 @@ class AFDController extends Controller
         try {
             return $this->AFDService->generateAFDT();
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return response()->json(['message' => 'Ocorreu um erro'], 500);
+        }
+    }
+
+    public function getACJEF()
+    {
+        try {
+            return $this->AFDService->generateACJEF();
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json(['message' => 'Ocorreu um erro'], 500);
         }
     }

@@ -23,7 +23,7 @@ class InsertClockEntryRequest extends FormRequest
     {
         return [
             'user_id' => 'required',
-            'timestamp' => 'required|date_format:Y-m-d H:i:s',
+            'timestamp' => 'required',
             'justification' => 'required',
             'day_off' => 'required|boolean',
             'doctor' => 'required|boolean',

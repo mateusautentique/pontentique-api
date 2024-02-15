@@ -41,7 +41,7 @@ Route::middleware('auth:api')->group(function () {
     Route::middleware('role:admin')->group(function (){
         Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
         Route::get('/getAFDT', [AFDController::class, 'getAFDT']);
-        //Route::get('/getACJEF', [AFDController::class, 'getACJEF']);
+        Route::get('/getACJEF', [AFDController::class, 'getACJEF']);
 
         Route::prefix('admin')->group(function () {
             Route::prefix('userEntries')->group(function () {
