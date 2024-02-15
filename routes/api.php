@@ -42,14 +42,14 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
         Route::get('/getAFDT', [AFDController::class, 'getAFDT']);
         //Route::get('/getACJEF', [AFDController::class, 'getACJEF']);
-        
+
         Route::prefix('admin')->group(function () {
             Route::prefix('userEntries')->group(function () {
                 Route::get('/deleted', [ClockController::class, 'getDeletedClockEntries']);
                 Route::get('/{id}', [ClockController::class, 'getAllUserClockEntries']);
                 Route::post('/', [ClockController::class, 'insertClockEntry']);
                 Route::put('/', [ClockController::class, 'updateClockEntry']);
-                Route::delete('/{id}', [ClockController::class, 'deleteClockEntry']);
+                Route::delete('/', [ClockController::class, 'deleteClockEntry']);
             });
     
             Route::prefix('manageUsers')->group(function () {

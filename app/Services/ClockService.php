@@ -90,27 +90,26 @@ class ClockService
         return $deletedClockEvents;
     }
 
-    public function deleteClockEntry(int $clock_id): string
+    public function deleteClockEntry(int $clock_id, string $justification): void
     {
         $clockEvent = ClockEvent::find($clock_id);
         if ($clockEvent) {
+            $clockEvent->justification = $justification;
+            $clockEvent->save();
             $clockEvent->delete();
-            return 'Entrada deletada com sucesso';
         }
     }
 
-    public function insertClockEntry(array $data): string
+    public function insertClockEntry(array $data): void
     {
         $clockEvent = ClockEvent::create($data);
-        return 'Entrada inserida com sucesso em ' . $clockEvent->timestamp;
     }
 
-    public function updateClockEntry(array $data): string
+    public function updateClockEntry(array $data): void
     {
         $clockEvent = ClockEvent::find($data['id']);
         if ($clockEvent) {
             $clockEvent->update($data);
-            return 'Entrada atualizada com sucesso';
         }
     }
 

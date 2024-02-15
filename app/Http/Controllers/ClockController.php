@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ClockReportRequest;
+use App\Http\Requests\DeleteClockEntryRequest;
 use App\Http\Requests\InsertClockEntryRequest;
 use App\Http\Requests\SetDayOffRequest;
 use App\Http\Requests\UpdateClockEntryRequest;
@@ -89,11 +90,11 @@ class ClockController extends Controller
         }
     }
 
-    public function deleteClockEntry($clock_id)
+    public function deleteClockEntry(DeleteClockEntryRequest $request)
     {
         try {
-            $message = $this->clockService->deleteClockEntry($clock_id);
-            return response()->json(['message' => $message]);
+            $this->clockService->deleteClockEntry($request['id'], $request['justification']);
+            return response()->json(['message' => 'Entrada deletada com sucesso']);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Entrada não encontrada'], 404);
         } catch (\Exception $e) {
@@ -105,8 +106,8 @@ class ClockController extends Controller
     public function insertClockEntry(InsertClockEntryRequest $request)
     {
         try {
-            $message = $this->clockService->insertClockEntry($request->all());
-            return response()->json(['message' => $message], 200);
+            $this->clockService->insertClockEntry($request->all());
+            return response()->json(['message' => 'Entrada inserida com sucesso'], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Usuário não encontrado'], 404);
         } catch (\Exception $e) {
@@ -118,8 +119,8 @@ class ClockController extends Controller
     public function updateClockEntry(UpdateClockEntryRequest $request)
     {
         try {
-            $message = $this->clockService->updateClockEntry($request->all());
-            return response()->json(['message' => $message], 200);
+            $this->clockService->updateClockEntry($request->all());
+            return response()->json(['message' => 'Entrada alterada com sucesso'], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Entrada não encontrada'], 404);
         } catch (\Exception $e) {
