@@ -37,7 +37,11 @@ class Ticket extends Model
                 $this->clockEvent()->update($requested_data);
                 break;
             case 'delete':
-                $this->clockEvent()->delete();
+                if ($this->clockEvent) {
+                    $this->clockEvent->justification = $this->justification;
+                    $this->clockEvent->save();
+                    $this->clockEvent->delete();
+                }
                 break;
         }
         $this->update(['status' => 'approved']);
