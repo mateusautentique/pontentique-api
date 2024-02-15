@@ -34,7 +34,7 @@ class AFDService
             $registry .= "{$nsr}{$type}{$timestamp}{$pis}{$registryNumber}{$eventType}{$pairNumber}{$registryType}{$justification}\n";
         }
         $header = $this->generateHeader();
-        $trailer = str_pad(++$nsrCounter, 9, '0', STR_PAD_LEFT) . "9";
+        $trailer = str_pad($nsrCounter, 9, '0', STR_PAD_LEFT) . "9";
         $afdt = $header . $registry . $trailer;
 
         return $afdt;
