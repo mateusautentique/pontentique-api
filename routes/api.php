@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClockController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\AFDController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +25,6 @@ Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
 
     Route::prefix('user')->group(function () {
         Route::get('/', [AuthController::class, 'getLoggedUserInfo']);
@@ -39,6 +39,10 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::middleware('role:admin')->group(function (){
+        Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
+        Route::get('/getAFDT', [AFDController::class, 'getAFDT']);
+        //Route::get('/getACJEF', [AFDController::class, 'getACJEF']);
+        
         Route::prefix('admin')->group(function () {
             Route::prefix('userEntries')->group(function () {
                 Route::get('/deleted', [ClockController::class, 'getDeletedClockEntries']);

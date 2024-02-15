@@ -5,17 +5,16 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Models\ClockEvent;
-use DateTime;
 
 class GetRHIDEntries extends Command
 {
-    //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:get-rh-id-afd-entries"
+    //docker exec -it pontentiqueapi-php-1 bash -c "php artisan app:get-rh-id-entries"
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:get-rh-id-afd-entries';
+    protected $signature = 'app:get-rh-id-entries';
 
     /**
      * The console command description.
