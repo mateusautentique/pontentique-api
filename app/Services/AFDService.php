@@ -81,7 +81,6 @@ class AFDService
         return $acjef;
     }
 
-    //AUX
     public function generateAFDT(): string
     {
         $nsrCounter = 2;
@@ -112,6 +111,7 @@ class AFDService
         return $afdt;
     }
 
+    //AUX
     private function getClockEventType($event): string
     {
         if ($event->deleted_at) {

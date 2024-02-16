@@ -16,6 +16,7 @@ class Ticket extends Model
         'status',
         'justification',
         'requested_data',
+        'handled_by',
     ];
 
     protected $casts = [
@@ -25,7 +26,7 @@ class Ticket extends Model
 
     protected $appends = ['user_name', 'clock_event_timestamp'];
 
-    public function approve()
+    public function approve(int $admin_id)
     {
         $requested_data = json_decode($this->requested_data, true);
 
@@ -34,9 +35,15 @@ class Ticket extends Model
                 $this->clockEvent()->create($requested_data);
                 break;
             case 'update':
+                if (!ClockEvent::where('id', $this->clock_event_id)->where('user_id', $this->user_id)->exists()) {
+                    throw new \Exception('Esse registro não existe');
+                }
                 $this->clockEvent()->update($requested_data);
                 break;
             case 'delete':
+                if (!ClockEvent::where('id', $this->clock_event_id)->where('user_id', $this->user_id)->exists()) {
+                    throw new \Exception('Esse registro não existe');
+                }
                 if ($this->clockEvent) {
                     $this->clockEvent->justification = $this->justification;
                     $this->clockEvent->save();
@@ -44,12 +51,12 @@ class Ticket extends Model
                 }
                 break;
         }
-        $this->update(['status' => 'approved']);
+        $this->update(['status' => 'approved', 'handled_by' => $admin_id]);
     }
 
-    public function deny()
+    public function deny(int $admin_id)
     {
-        $this->update(['status' => 'rejected']);
+        $this->update(['status' => 'rejected', 'handled_by' => $admin_id]);
     }
 
     public function clockEvent()

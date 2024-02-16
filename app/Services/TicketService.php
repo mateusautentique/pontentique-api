@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Ticket;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class TicketService
 {
@@ -39,12 +40,13 @@ class TicketService
 
     public function handleTicket(Ticket $ticket, string $action): string
     {
+        $handler_id = Auth::id();
         switch ($action) {
             case 'approve':
-                $ticket->approve();
+                $ticket->approve($handler_id);
                 return 'Ticket aprovado com sucesso';
             case 'deny':
-                $ticket->deny();
+                $ticket->deny($handler_id);
                 return 'Ticket negado com sucesso';
             default:
                 return 'Ação inválida';

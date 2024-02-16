@@ -71,6 +71,14 @@ class TicketController extends Controller
     {
         try {
             $ticket = Ticket::find($request->ticket_id);
+            if (!$ticket) {
+                return response()->json(['message' => 'Ticket não encontrado'], 404);
+            }
+            if ($ticket->status !== 'pending') {
+                return response()->json(['message' => 'Esse ticket já foi processado'], 400);
+            }
+            
+
             $action = $request->action;
             $message = $this->ticketService->handleTicket($ticket, $action);
             

@@ -13,6 +13,7 @@ return new class extends Migration
             $table->timestamps();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('clock_event_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('handled_by')->nullable()->constrained('users')->onDelete('cascade')->default(null);
             $table->enum('type', ['update', 'create', 'delete'])->required();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->string('justification')->required();

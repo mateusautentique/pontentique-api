@@ -19,4 +19,9 @@ return [
         'password' => 'senha',
         'name' => 'nome',
     ],
+    'custom' => [
+        'clock_event_id' => [
+            'exists' => 'O idenitficador do registro é inválido.',
+        ],
+    ],
 ];
