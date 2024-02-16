@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\ClockEvent;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use DateTime;
 
 class AFDService
 {
@@ -39,22 +39,39 @@ class AFDService
                 $firstEntryTime = $firstEntry ? $firstEntry->timestamp->format('Hi') : "0000";
 
                 $hoursCode = "0001";
-                list($balanceHours, $extraHours, $expectedHours) = $this->calculateHours($entries);
-                //$normalHours = 
+                list($balanceHours, $extraHours, $normalHours) = $this->calculateHours($entries);
+                $dayHours = $this->formatTime($normalHours);
+                $nightHours = $this->formatTime(0);
 
-                $registry .= "{$nsr}{$type}{$pis}{$day}{$firstEntryTime}{$hoursCode}\n";
+                $extraHoursDayPay = "5000";
+                $extraHoursNightPay = "8000";
 
-                // foreach ($entries as $entry) {
-                //     if ($entry->day_off || $entry->doctor) {
-                //         continue;
-                //     }
-                //     $nsr = str_pad($nsrCounter++, 9, '0', STR_PAD_LEFT);
-                //     $type = '3';
-                //     $pis = str_pad($user->pis, 11, '0', STR_PAD_LEFT);
-                //     $day = $entry->timestamp->format('dmY');
-                //     $firstEntry = $entries->first()->timestamp->format('Hi');
-                    
-                // }
+                $extraHours1 = "0000";
+                $extraHours2 = "0000";
+                $extraHours3 = "0000";
+                $extraHours4 = "0000";
+
+                $bufferDay = DateTime::createFromFormat('dmY', $day);
+                if (Carbon::instance($bufferDay)->isWeekend()){
+                    $extraHours3 = $this->formatTime($extraHours);
+                } else {
+                    $extraHours1 = $this->formatTime($extraHours);
+                }
+
+                $abstenceHoursInSec = $normalHours < 28800 ? 28800 - $normalHours : 0;
+                $abstenceHours = $this->formatTime($abstenceHoursInSec);
+
+                $compensationSign = "1";
+                if ($balanceHours < 0) {
+                    $balanceHours = abs($balanceHours);
+                    $compensationSign = "2";
+                }
+
+                $registry .= "{$nsr}{$type}{$pis}{$day}{$firstEntryTime}{$hoursCode}";
+                $registry .= "{$dayHours}{$nightHours}{$extraHours1}{$extraHoursDayPay}D";
+                $registry .= "{$extraHours2}{$extraHoursNightPay}N{$extraHours3}{$extraHoursDayPay}D";
+                $registry .= "{$extraHours4}{$extraHoursNightPay}D";
+                $registry .= "{$abstenceHours}{$this->formatTime($balanceHours)}{$compensationSign}\n";
             }
         }
 
@@ -184,8 +201,16 @@ class AFDService
         $expectedWorkHoursInSec = $defaultWorkJourneyHours * 3600;
         $normalHoursInSec = min($totalTimeWorked, $expectedWorkHoursInSec);
         $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
-        $balanceHoursInSec = $totalTimeWorked < $expectedWorkHoursInSec ? $expectedWorkHoursInSec - $totalTimeWorked : 0;
+        $balanceHoursInSec = $totalTimeWorked - $expectedWorkHoursInSec;
     
         return [$balanceHoursInSec, $extraHoursInSec, $normalHoursInSec];
+    }
+
+    private function formatTime(int $timeInSeconds): string
+    {
+        $normalHoursInMinutes = intdiv($timeInSeconds, 60);
+        $hours = str_pad(intdiv($normalHoursInMinutes, 60), 2, '0', STR_PAD_LEFT);
+        $minutes = str_pad($normalHoursInMinutes % 60, 2, '0', STR_PAD_LEFT);
+        return $hours . $minutes;
     }
 }
