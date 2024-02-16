@@ -9,7 +9,8 @@ Até o momento, a API possui as seguintes funcionalidades:
 - Relatórios sobre batidas de ponto
 - Inserção, atualização e remoção de batidas de ponto manualmente
 - Sistema de tickets, que podem ser aceitos ou não por administradores
-- Gerar uma AFD com todas as ações de ponto ou usuário
+- Criação de logs em ações que envolvem pontos ou usuários
+- Geração de relatórios AFDT e ACJEF
 
 Abaixo, estarão listados alguns exemplos de requisições. Todos elas (exceto registro e login) requerem um token de autenticação válido, caso contrário, elas retornam um erro **401** (*Unauthorized*).
 
@@ -140,9 +141,9 @@ A resposta deve ser um JSON contendo diversos atributos do usuário logado.
 }
 ```
 
-## Gerar relatório AFD
+## Gerar relatório de logs
 
-`GET` para http://localhost/api/getAFD
+`GET` para http://localhost/api/getSystemLogs
 
 - Response
 
@@ -188,6 +189,18 @@ O formato é o seguinte:
 | NOME          | 0-255                                  | Texto                                | 0-255 caracteres |
 
 ------------------------------------------------------
+
+## Gerar relatórios AFDT e ACJEF
+
+> Essas requisições requerem um token de administrador
+
+`GET` para http://localhost/api/getAFDT
+
+Ou então
+
+`GET` para http://localhost/api/getACJEF
+
+Essas requisições retornam os relatórios em texto plano, segundo o modelo da portaria 1510/2009.
 
 # Requisições de usuários
 
@@ -580,7 +593,20 @@ Exemplo:
 
 ## Deletar um ponto manualmente
 
-`DELETE` para http://localhost/api/admin/userEntries/{id}
+`DELETE` para http://localhost/api/admin/userEntries/
+
+- Body
+
+O body da requisição deve conter um campo "id", que representa o id do ponto, bem como uma justificativa.
+
+Exemplo:
+
+```json
+{
+    "id": 15,
+    "justification": "i forgor"
+}
+```
 
 - Response
 
@@ -589,6 +615,8 @@ Exemplo:
     "message": "Clock entry deleted successfully"
 }
 ```
+
+> Os pontos deletados não são removidos do banco de dados, mas sim marcados como deletados, e não são mais considerados em cálculos de banco de horas.
 
 ---
 
