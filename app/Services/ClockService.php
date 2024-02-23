@@ -147,9 +147,13 @@ class ClockService
 
     private function calculateWorkHours(
         int $totalTimeWorked,
-        float $workJourneyHoursForDay,
+        int $workJourneyHoursForDay,
         float $defaultWorkJourneyHours = 8
     ): array {
+        if ($totalTimeWorked >= 28200 && $totalTimeWorked <= 29400) {
+            return [0, 28800];
+        }
+        
         $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay);
         $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
         if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {

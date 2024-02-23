@@ -32,7 +32,7 @@ class GetRHIDEntries extends Command
         $lines = explode("\n", $fileContents);
 
         $users = User::all()->keyBy('cpf');
-
+        
         foreach ($lines as $line) {
             if (strlen($line) < 10 || $line[9] != '7') {
                 continue;
