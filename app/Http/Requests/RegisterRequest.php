@@ -38,11 +38,11 @@ class RegisterRequest extends FormRequest
 
         if ($errors->has('password') && str_contains($errors->first('password'), 'confirmação')) {
             throw new HttpResponseException(response(['error' => $errors->first('password')], 494));
-        }        
+        }
 
         $fields = ['name', 'cpf', 'email', 'password', 'pis'];
         $statusCodes = [490, 491, 492, 493, 495];
-    
+
         foreach ($fields as $index => $field) {
             if ($errors->has($field)) {
                 throw new HttpResponseException(response(['error' => $errors->first($field)], $statusCodes[$index]));

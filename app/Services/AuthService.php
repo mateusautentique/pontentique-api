@@ -32,26 +32,15 @@ class AuthService
         return $user->createToken('userToken')->accessToken;
     }
 
-    public function logout(User $user): string
+    public function logout(User $user): void
     {
-        if (!$user) {
-            return 'User not found';
-        }
         foreach ($user->tokens as $token) {
             $token->revoke();
         }
-        return 'Successfully logged out';
     }
 
-    public function validateToken(): Response
+    public function validateToken(): bool
     {
-        return Auth::guard('api')->check()
-            ? response(['message' => true], 200)
-            : response(['message' => false], 401);
-    }
-
-    public function getLoggedUserInfo(User $user): JsonResponse
-    {
-        return response()->json($user);
+        return Auth::guard('api')->check();
     }
 }

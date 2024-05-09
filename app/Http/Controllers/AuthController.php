@@ -43,24 +43,41 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $user = $request->user();
+        if ( ! $user) {
+            return response(['message' => 'User not found'], 404);
+        }
+
         try {
-            $user = $request->user();
-            $message = $this->authService->logout($user);
-            return response(['message' => $message], 200);
+            $this->authService->logout($user);
+            return response(['message' => 'Successfully logged out'], 200);
         } catch (\Exception $e) {
             return response([
-                'message' => $e->getMessage(), 
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
     public function validateToken()
     {
-        return $this->authService->validateToken();
+        return response([
+            'message' => $this->authService->validateToken()
+        ], 200);
     }
 
     public function getLoggedUserInfo()
     {
-        return $this->authService->getLoggedUserInfo(auth()->user());
+        try {
+            $user = auth()->user();
+            if ( ! $user) {
+                return response(['message' => 'User not found'], 404);
+            }
+
+            return $user;
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -31,11 +31,11 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/punchClock', [ClockController::class, 'registerClock']);
         Route::post('/userEntries', [ClockController::class, 'getClockReport']);
         Route::post('/ticket', [TicketController::class, 'createTicket']);
-        
+
         Route::prefix('setDayOff')->group(function () {
             Route::post('/', [ClockController::class, 'setDayOffForDate']);
         });
-    
+
     });
 
     Route::middleware('role:admin')->group(function (){
@@ -51,7 +51,7 @@ Route::middleware('auth:api')->group(function () {
                 Route::put('/', [ClockController::class, 'updateClockEntry']);
                 Route::delete('/', [ClockController::class, 'deleteClockEntry']);
             });
-    
+
             Route::prefix('manageUsers')->group(function () {
                 Route::get('/', [UserController::class, 'getAllUsers']);
                 Route::get('/user/{id}', [UserController::class, 'getUserById']);
@@ -60,7 +60,7 @@ Route::middleware('auth:api')->group(function () {
                 Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
                 Route::get('/user/status/{id}', [UserController::class, 'checkUserStatus']);
             });
-    
+
             Route::prefix('manageTickets')->group(function () {
                 Route::get('/', [TicketController::class, 'showAllTickets']);
                 Route::get('/active', [TicketController::class, 'showAllActiveTickets']);
