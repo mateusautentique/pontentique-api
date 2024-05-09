@@ -77,11 +77,11 @@ class TicketController extends Controller
             if ($ticket->status !== 'pending') {
                 return response()->json(['message' => 'Esse ticket já foi processado'], 400);
             }
-            
+
 
             $action = $request->action;
             $message = $this->ticketService->handleTicket($ticket, $action);
-            
+
             return response()->json(['message' => $message], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => 'Input inválido'], 422);

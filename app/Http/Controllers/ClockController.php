@@ -29,9 +29,16 @@ class ClockController extends Controller
 
     public function registerClock(Request $request)
     {
+        $user = $request->user();
+        if ( ! $user) {
+            return response()->json(['message' => 'Usuário não encontrado'], 404);
+        }
+
+        $id = $user->id;
+
         try {
-            $message = $this->clockService->registerClock($request['user_id']);
-            return response()->json(['message' => $message]);
+            $timestamp = $this->clockService->registerClock($id);
+            return response()->json(['message' => 'Entrada registrada com sucesso em ' . $timestamp]);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json(['message' => 'Ocorreu um erro'], 500);

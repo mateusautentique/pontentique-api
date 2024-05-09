@@ -26,7 +26,7 @@ class ClockService
             'rh_id' => false,
         ]);
 
-        return 'Entrada registrada com sucesso em ' . $clockEvent->timestamp;
+        return $clockEvent->timestamp;
     }
 
     public function getClockReport(array $request): ReportDataResource
@@ -153,7 +153,7 @@ class ClockService
         if ($totalTimeWorked >= 28200 && $totalTimeWorked <= 29400) {
             return [0, 28800];
         }
-        
+
         $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay);
         $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
         if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {
@@ -186,8 +186,8 @@ class ClockService
     {
         $userCreatedDate = $user->created_at ?? Carbon::minValue();
 
-        $startDate = $timestamps['start_date'] ?? $userCreatedDate;
-        $endDate = $timestamps['end_date'] ?? Carbon::now();
+        $startDate = !empty($timestamps['start_date']) ? $timestamps['start_date'] : $userCreatedDate;
+        $endDate = !empty($timestamps['end_date']) ? $timestamps['end_date'] : Carbon::now();
 
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate)->endOfDay();
@@ -203,8 +203,8 @@ class ClockService
         $user = User::find($userId);
         $userCreatedDate = $user->created_at ?? Carbon::minValue();
 
-        $startDate = $request['start_date'] ? Carbon::parse($request['start_date'])->startOfDay() : Carbon::parse($userCreatedDate)->startOfDay();
-        $endDate = $request['end_date'] ? Carbon::parse($request['end_date'])->endOfDay() : Carbon::now()->endOfDay();
+        $startDate = !empty($request['start_date']) ? Carbon::parse($request['start_date'])->startOfDay() : Carbon::parse($userCreatedDate)->startOfDay();
+        $endDate = !empty($request['end_date']) ? Carbon::parse($request['end_date'])->endOfDay() : Carbon::now()->endOfDay();
 
         return collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate));
     }
