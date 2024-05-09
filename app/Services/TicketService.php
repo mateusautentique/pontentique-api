@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,14 +29,15 @@ class TicketService
             ->get();
     }
 
-    public function createTicket(array $data): string
+    public function createTicket(array $data, User $user): void
     {
+        $data['user_id'] = $user->id;
+
         if (isset($data['requested_data'])) {
             $data['requested_data'] = json_encode($data['requested_data']);
         }
-    
+
         Ticket::create($data);
-        return 'Ticket criado com sucesso';
     }
 
     public function handleTicket(Ticket $ticket, string $action): string

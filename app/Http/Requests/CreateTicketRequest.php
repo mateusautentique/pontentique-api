@@ -26,13 +26,12 @@ class CreateTicketRequest extends FormRequest
         if (!in_array($type, ['create', 'delete', 'update'])) {
             throw new \InvalidArgumentException('Tipo de ticket inválido');
         }
-    
+
         $rules = [
-            'user_id' => 'required',
             'type' => 'required',
             'justification' => 'required',
         ];
-    
+
         if ($type === 'create') {
             $rules['clock_event_id'] = 'nullable';
             $rules['requested_data'] = [
@@ -41,7 +40,7 @@ class CreateTicketRequest extends FormRequest
                 $this->getRequestedDataValidator(),
             ];
         }
-    
+
         if ($type === 'update') {
             $rules['clock_event_id'] = 'required|exists:clock_events,id';
             $rules['requested_data'] = [
@@ -50,26 +49,25 @@ class CreateTicketRequest extends FormRequest
                 $this->getRequestedDataValidator(),
             ];
         }
-    
+
         if ($type === 'delete') {
             $rules['clock_event_id'] = 'required|exists:clock_events,id';
             $rules['requested_data'] = 'nullable';
         }
-    
+
         return $rules;
     }
-    
+
     private function getRequestedDataValidator()
     {
         return function ($attribute, $value, $fail) {
             $validator = Validator::make($value, [
-                'user_id' => ['required'],
                 'timestamp' => ['required'],
                 'justification' => ['required'],
                 'day_off' => ['required', 'boolean'],
                 'doctor' => ['required', 'boolean'],
             ]);
-    
+
             if ($validator->fails()) {
                 $fail('Dados de atualização inválidos.');
             }

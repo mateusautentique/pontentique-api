@@ -10,6 +10,8 @@ class ApiAuthenticate extends Middleware
 {
     public function handle($request, Closure $next, ...$guards)
     {
+        Auth::shouldUse('api');
+
         foreach ($guards as $guard) {
             if ( ! Auth::guard($guard)->check()) {
                 return response()->json(['error' => 'unauthenticated'], 403);

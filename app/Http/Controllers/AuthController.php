@@ -44,7 +44,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = $request->user();
-        if ( ! $user) {
+        if (!$user) {
             return response(['message' => 'User not found'], 404);
         }
 
@@ -65,15 +65,15 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function getLoggedUserInfo()
+    public function getLoggedUserInfo(Request $request)
     {
-        try {
-            $user = auth()->user();
-            if ( ! $user) {
-                return response(['message' => 'User not found'], 404);
-            }
+        $user = $request->user();
+        if (!$user) {
+            return response(['message' => 'User not found'], 404);
+        }
 
-            return $user;
+        try {
+            return response()->json($user);
         } catch (\Exception $e) {
             return response([
                 'message' => $e->getMessage()
