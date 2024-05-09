@@ -10,7 +10,7 @@ class CheckUserRole
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        if ( ! Auth::check() || Auth::user()->role != $role) {
+        if (!Auth::check() || Auth::user()->role != $role) {
             return response()->json(['error' => 'Não autorizado'], 403);
         }
 
