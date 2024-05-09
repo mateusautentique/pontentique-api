@@ -23,7 +23,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/validateToken', [AuthController::class, 'validateToken']);
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('api-auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::prefix('user')->group(function () {
