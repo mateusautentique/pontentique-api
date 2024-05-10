@@ -125,19 +125,22 @@ class ClockActionsService
                 $totalTimeWorkedInSec = $this->calculateTotalTime($normalEvents);
                 list($extraHoursInSec, $normalHoursInSec) = $this->calculateWorkHours($totalTimeWorkedInSec, $expectedWorkHoursOnDay);
 
-                return $this->createEntryData(
-                    $day,
-                    $expectedWorkHoursOnDay,
-                    $normalHoursInSec,
-                    $extraHoursInSec,
-                    $totalTimeWorkedInSec,
-                    $eventsForDate,
-                    $events
-                );
+                return new EntryDataResource([
+                    'day' => $day->format('Y-m-d'),
+                    'expected_work_hours_on_day' => $this->convertDecimalToTime($expectedWorkHoursOnDay / 3600),
+                    'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
+                    'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
+                    'balance_hours_on_day' => $this->calculateBalanceOfHours(
+                        ($normalHoursInSec + $extraHoursInSec),
+                        $expectedWorkHoursOnDay
+                    ),
+                    'total_time_worked_in_seconds' => $totalTimeWorkedInSec,
+                    'event_count' => $eventsForDate->count(),
+                    'events' => $events,
+                ]);
             });
     }
 
-    //DATA FORMATTING
     private function fillMissingDays(object $clockEvents, ClockReportRequest $request, int $userWorkJourneyHours): object
     {
         $dateRange = $this->getDateRange($request);
@@ -145,7 +148,16 @@ class ClockActionsService
             $date = Carbon::instance($date);
             $formattedDate = $date->format('Y-m-d');
             if (!(isset($clockEvents[$formattedDate]))) {
-                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend(), $userWorkJourneyHours);
+                $eventData = new EntryDataResource([
+                    'day' => $formattedDate,
+                    'expected_work_hours_on_day' => $date->isWeekend() ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
+                    'normal_hours_worked_on_day' => '0:00',
+                    'extra_hours_worked_on_day' => '0:00',
+                    'balance_hours_on_day' => $date->isWeekend() ? '0:00' : $this->convertDecimalToTime(-$userWorkJourneyHours),
+                    'total_time_worked_in_seconds' => 0,
+                    'event_count' => 0,
+                    'events' => [],
+                ]);
                 $clockEvents->put($formattedDate, $eventData);
             }
         }
@@ -165,66 +177,6 @@ class ClockActionsService
             return $this->convertTimeToDecimal($clockEvent['balance_hours_on_day']);
         })->sum();
 
-        return $this->createReportData(
-            $user,
-            $totalTimeWorkedInSeconds,
-            $totalNormalHours,
-            $expectedWorkJourneyHoursForPeriod,
-            $totalHourBalance,
-            $clockEvents
-        );
-    }
-
-    //RESPONSE FORMATTING
-    private function createEntryData(
-        object $day,
-        int $expectedWorkHoursOnDay,
-        int $normalHoursInSec,
-        int $extraHoursInSec,
-        int $totalTimeWorkedInSec,
-        object $eventsForDate,
-        object $events
-    ): EntryDataResource {
-        return new EntryDataResource([
-            'day' => $day->format('Y-m-d'),
-            'expected_work_hours_on_day' => $this->convertDecimalToTime($expectedWorkHoursOnDay / 3600),
-            'normal_hours_worked_on_day' => $this->convertDecimalToTime($normalHoursInSec / 3600),
-            'extra_hours_worked_on_day' => $this->convertDecimalToTime($extraHoursInSec / 3600),
-            'balance_hours_on_day' => $this->calculateBalanceOfHours(
-                ($normalHoursInSec + $extraHoursInSec),
-                $expectedWorkHoursOnDay
-            ),
-            'total_time_worked_in_seconds' => $totalTimeWorkedInSec,
-            'event_count' => $eventsForDate->count(),
-            'events' => $events,
-        ]);
-    }
-
-    private function createDefaultEntryResponse(
-        string $formattedDate,
-        bool $isWeekend,
-        int $userWorkJourneyHours
-    ): EntryDataResource {
-        return new EntryDataResource([
-            'day' => $formattedDate,
-            'expected_work_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime($userWorkJourneyHours),
-            'normal_hours_worked_on_day' => '0:00',
-            'extra_hours_worked_on_day' => '0:00',
-            'balance_hours_on_day' => $isWeekend ? '0:00' : $this->convertDecimalToTime(-$userWorkJourneyHours),
-            'total_time_worked_in_seconds' => 0,
-            'event_count' => 0,
-            'events' => [],
-        ]);
-    }
-
-    private function createReportData(
-        User $user,
-        int $totalTimeWorkedInSeconds,
-        float $totalNormalHours,
-        int $expectedWorkJourneyHoursForPeriod,
-        float $totalHourBalance,
-        object $clockEvents
-    ): ReportDataResource {
         return new ReportDataResource([
             'user_id' => $user->id,
             'user_name' => $user->name,
