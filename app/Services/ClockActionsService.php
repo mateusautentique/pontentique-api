@@ -10,13 +10,16 @@ use App\Models\ClockEvent;
 use App\Models\User;
 use App\Repositories\ClockEventRepository;
 use App\Traits\EventFilterTrait;
+use App\Traits\HourCalculationTrait;
+use App\Traits\TimeConversionTrait;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
+use Illuminate\Support\Collection;
 
 class ClockActionsService
 {
-    use EventFilterTrait;
+    use EventFilterTrait, HourCalculationTrait, TimeConversionTrait;
 
     protected ClockEventRepository $clockEventRepository;
     protected User $user;
@@ -47,13 +50,13 @@ class ClockActionsService
 
         $startDateLimit = $user->created_at ?? Carbon::minValue();
 
-        $startDate = Carbon::parse(!empty($timestamps['start_date']) ? $timestamps['start_date'] : $startDateLimit);
-        $endDate = Carbon::parse(!empty($timestamps['end_date']) ? $timestamps['end_date'] : Carbon::now())->endOfDay();
+        $startDate = Carbon::parse( ! empty($timestamps['start_date']) ? $timestamps['start_date'] : $startDateLimit);
+        $endDate = Carbon::parse( ! empty($timestamps['end_date']) ? $timestamps['end_date'] : Carbon::now())->endOfDay();
 
-        // $clockEventsObject = $this->clockEventRepository->getClockEventsByDate($startDate, $endDate, $this->user);
+        $clockEventsObject = $this->clockEventRepository->getClockEventsByDate($startDate, $endDate, $this->user);
 
-        $formattedClockEvents = $this->getClockEvents($startDate, $endDate, $user->work_journey_hours * 3600);
-        $formattedClockEvents = $this->fillMissingDays($formattedClockEvents, $request, $user->work_journey_hours = 8);
+        $formattedClockEvents = $this->formatClockEventsIntoResource($clockEventsObject, $user->work_journey_hours * 3600);
+        $formattedClockEvents = $this->fillMissingDays($formattedClockEvents, $request, $user->work_journey_hours);
 
         return $this->generateReport($formattedClockEvents, $user);
     }
@@ -88,66 +91,8 @@ class ClockActionsService
             ' até ' . $end->format('Y-m-d') . ' ' . $end_time->format('H:i');
     }
 
-    //HOUR CALCULATION
-    private function calculateTotalTime(object $events): int
-    {
-        $totalTime = 0;
-
-        $events->each(function ($item, $index) use (&$totalTime, $events) {
-            if ($index % 2 == 0) {
-                $clockInEvent = $item;
-                $clockOutEvent = $events->get($index + 1);
-
-                if ($clockOutEvent) {
-                    $clockInTime = \Carbon\Carbon::parse($clockInEvent['timestamp']);
-                    $clockOutTime = \Carbon\Carbon::parse($clockOutEvent['timestamp']);
-                    $timeWorked = $clockInTime->diffInSeconds($clockOutTime);
-                    $timeWorked = max($timeWorked, 60);
-                    $totalTime += $timeWorked;
-                }
-            }
-        });
-
-        return $totalTime;
-    }
-
-    private function calculateWorkHours(
-        int $totalTimeWorked,
-        int $workJourneyHoursForDay,
-        float $defaultWorkJourneyHours = 8
-    ): array {
-        if ($totalTimeWorked >= 28200 && $totalTimeWorked <= 29400) {
-            return [0, 28800];
-        }
-
-        $normalHoursInSec = min($totalTimeWorked, $workJourneyHoursForDay);
-        $extraHoursInSec = max(0, $totalTimeWorked - $normalHoursInSec);
-        if ($workJourneyHoursForDay < $defaultWorkJourneyHours) {
-            $extraHoursInSec = 0;
-        }
-        return [$extraHoursInSec, $normalHoursInSec];
-    }
-
-    private function calculateTotalTimeAndNormalHours(object $clockEvents): array
-    {
-        $totalTimeWorkedInSeconds = $clockEvents->sum('total_time_worked_in_seconds');
-        $totalNormalHours = $clockEvents->map(function ($clockEvent) {
-            return $this->convertTimeToDecimal($clockEvent['normal_hours_worked_on_day']);
-        })->sum();
-
-        return [$totalTimeWorkedInSeconds, $totalNormalHours];
-    }
-
-    private function calculateBalanceOfHours(int $workedHoursInSec, int $expectedWorkHoursInSec): string
-    {
-        $balanceOfHours = ($workedHoursInSec - $expectedWorkHoursInSec) / 3600;
-        return $this->convertDecimalToTime($balanceOfHours);
-    }
-
-    //UTILS
-
-    //DATE FORMATTING
-    private function getDateRange(ClockReportRequest $request): object
+    // AUX
+    private function getDateRange(ClockReportRequest $request): Collection
     {
         $userId = $request['user_id'];
         $user = User::find($userId);
@@ -159,10 +104,9 @@ class ClockActionsService
         return collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate));
     }
 
-    private function getClockEvents(Carbon $startDate, Carbon $endDate, int $workJourneyHoursInSec): object
+    private function formatClockEventsIntoResource(Collection $clockEvents, int $workJourneyHoursInSec): Collection
     {
-        return $this->clockEventRepository->getClockEventsByDate($startDate, $endDate, $this->user)
-            ->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
+        return $clockEvents->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
                 list($normalEvents, $dayOffEvents) = $this->separateEvents($eventsForDate);
 
                 $normalEvents = $normalEvents->map(function ($event, $index) {
@@ -191,31 +135,6 @@ class ClockActionsService
                     $events
                 );
             });
-    }
-
-    //CONVERSION
-
-    private function convertDecimalToTime(float $hoursDecimal): string
-    {
-        $sign = $hoursDecimal < 0 ? '-' : '';
-        $hoursDecimal = abs($hoursDecimal);
-
-        $hours = intval($hoursDecimal);
-        $decimalHours = $hoursDecimal - $hours;
-        $minutes = round($decimalHours * 60);
-
-        if ($minutes == 60) {
-            $hours += 1;
-            $minutes = 0;
-        }
-
-        return sprintf("%s%d:%02d", $sign, $hours, $minutes);
-    }
-
-    private function convertTimeToDecimal(string $time): float
-    {
-        [$hours, $minutes] = explode(':', $time);
-        return $hours + ($minutes / 60);
     }
 
     //DATA FORMATTING
