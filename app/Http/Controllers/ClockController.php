@@ -7,6 +7,7 @@ use App\Http\Requests\DeleteClockEntryRequest;
 use App\Http\Requests\InsertClockEntryRequest;
 use App\Http\Requests\SetDayOffRequest;
 use App\Http\Requests\UpdateClockEntryRequest;
+use App\Services\ClockActionsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -19,10 +20,12 @@ use App\Services\ClockService;
 class ClockController extends Controller
 {
     private ClockService $clockService;
+    private ClockActionsService $clockActionsService;
 
-    public function __construct(ClockService $clockService)
+    public function __construct(ClockService $clockService, ClockActionsService $clockActionsService)
     {
         $this->clockService = $clockService;
+        $this->clockActionsService = $clockActionsService;
     }
 
     // MAIN CLOCK LOGIC
@@ -37,7 +40,7 @@ class ClockController extends Controller
         $id = $user->id;
 
         try {
-            $timestamp = $this->clockService->registerClock($id);
+            $timestamp = $this->clockActionsService->registerClock($id);
             return response()->json(['message' => 'Entrada registrada com sucesso em ' . $timestamp]);
         } catch (\Exception $e) {
             Log::error($e);
@@ -48,7 +51,7 @@ class ClockController extends Controller
     public function getClockReport(ClockReportRequest $request)
     {
         try {
-            $report = $this->clockService->getClockReport($request->all());
+            $report = $this->clockActionsService->getClockReport($request->all());
             return response()->json($report);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Usuário não encontrado'], 404);
@@ -61,7 +64,7 @@ class ClockController extends Controller
     public function setDayOffForDate(SetDayOffRequest $request)
     {
         try {
-            $message = $this->clockService->setDayOffForDate($request->all());
+            $message = $this->clockActionsService->setDayOffForDate($request->all());
             return response()->json(['message' => $message]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Entrada inválida'], 400);

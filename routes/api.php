@@ -56,7 +56,7 @@ Route::middleware('api.auth')->group(function () {
                 Route::get('/', [UserController::class, 'getAllUsers']);
                 Route::get('/user/{id}', [UserController::class, 'getUserById']);
                 Route::post('/user', [UserController::class, 'insertUser']);
-                Route::put('/user/', [UserController::class, 'updateUser']);
+                Route::put('/user', [UserController::class, 'updateUser']);
                 Route::delete('/user/{id}', [UserController::class, 'deleteUser']);
                 Route::get('/user/status/{id}', [UserController::class, 'checkUserStatus']);
             });
