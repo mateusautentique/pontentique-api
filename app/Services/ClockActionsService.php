@@ -17,6 +17,26 @@ use DateInterval;
 use DatePeriod;
 use Illuminate\Support\Collection;
 
+/**
+ *  "No começo, só eu e Deus sabiamos como funcionava esse código. Agora, só Deus sabe."
+ *  (Autor desconhecido)
+ *
+ *  O Pontentique não guarda cálculos de hora, nem registros ordenados. Ele apenas registra os eventos de ponto.
+ *  A função getClockReport() é responsável por gerar os registros da forma que um ser humano consiga entender.
+ *  Caso algum dia alguém precise fazer a manutenção desse código, boa sorte.
+ *
+ *  Mentira, a função basicamente funciona em 5 passos:
+ *  - Pegar os eventos do usuário do período entre a data especificada. Um objeto Collection é retornado.
+ *  - Primeiro, ele formata cada batida de ponto nos moldes do EntryDataResource. (Cada batida individual)
+ *  - Segundo, ele formata os eventos por dia seguindo os moldes do EventDataResource. (Todos os eventos do dia)
+ *  - O código preenche esse objeto com os dias faltantes com os dados padronizados. (Todos os dias do período selecionado)
+ *  - Gera o relatório com os dados formatados seguindo os moldes do ReportDataResource.
+ *    (Todos os dias do período selecionado, mais algumas informações do usuário e contagem de horas total).
+ *
+ *  Isso deixa os dados prontos para serem mostrados no front, tem a sua desvantagem de ser lento e complexo,
+ *  porém a grande vantagem é que não é necessário recalcular o banco inteiro toda vez que algum registro for alterado.
+ */
+
 class ClockActionsService
 {
     use EventFilterTrait, HourCalculationTrait, TimeConversionTrait;

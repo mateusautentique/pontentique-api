@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\AFDService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class AFDController extends Controller

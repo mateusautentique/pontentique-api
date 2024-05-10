@@ -1,23 +1,12 @@
 <?php
 
-use App\Http\Controllers\LogController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AFDController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClockController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\TicketController;
-use App\Http\Controllers\AFDController;
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -35,10 +24,9 @@ Route::middleware('api.auth')->group(function () {
         Route::prefix('setDayOff')->group(function () {
             Route::post('/', [ClockController::class, 'setDayOffForDate']);
         });
-
     });
 
-    Route::middleware('role:admin')->group(function (){
+    Route::middleware('role:admin')->group(function () {
         Route::get('/getSystemLogs', [LogController::class, 'getSystemLogs']);
         Route::get('/getAFDT', [AFDController::class, 'getAFDT']);
         Route::get('/getACJEF', [AFDController::class, 'getACJEF']);
@@ -69,9 +57,4 @@ Route::middleware('api.auth')->group(function () {
             });
         });
     });
-
-    // Route::prefix('test')->group(function () {
-    //     Route::delete('/tickets', [TicketController::class, 'dropAllTickets']);
-    //     Route::delete('/deleteEntries', [ClockController::class, 'deleteAllClockEntries']);
-    // });
 });

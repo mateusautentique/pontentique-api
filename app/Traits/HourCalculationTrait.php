@@ -8,6 +8,9 @@ trait HourCalculationTrait
 {
     use TimeConversionTrait;
 
+    /**
+     * Calculate the total time worked in between events, returns time in seconds.
+     */
     private function calculateTotalTime(object $events): int
     {
         $totalTime = 0;
@@ -54,6 +57,10 @@ trait HourCalculationTrait
         return [$totalTimeWorkedInSeconds, $totalNormalHours];
     }
 
+    /**
+     * Calculate the balance of hours between worked hours and expected work hours, return is a string.
+     * Example: 8:30
+     */
     private function calculateBalanceOfHours(int $workedHoursInSec, int $expectedWorkHoursInSec): string
     {
         $balanceOfHours = ($workedHoursInSec - $expectedWorkHoursInSec) / 3600;
