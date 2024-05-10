@@ -7,8 +7,11 @@ use App\Http\Requests\DeleteClockEntryRequest;
 use App\Http\Requests\InsertClockEntryRequest;
 use App\Http\Requests\SetDayOffRequest;
 use App\Http\Requests\UpdateClockEntryRequest;
+use App\Models\User;
+use App\Repositories\ClockEventRepository;
 use App\Services\ClockActionsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Services\ClockService;
@@ -30,17 +33,15 @@ class ClockController extends Controller
 
     // MAIN CLOCK LOGIC
 
-    public function registerClock(Request $request)
+    public function registerClock()
     {
-        $user = $request->user();
+        $user = Auth::user();
         if ( ! $user) {
             return response()->json(['message' => 'Usuário não encontrado'], 404);
         }
 
-        $id = $user->id;
-
         try {
-            $timestamp = $this->clockActionsService->registerClock($id);
+            $timestamp = $this->clockActionsService->registerClock($user->id);
             return response()->json(['message' => 'Entrada registrada com sucesso em ' . $timestamp]);
         } catch (\Exception $e) {
             Log::error($e);
@@ -51,7 +52,15 @@ class ClockController extends Controller
     public function getClockReport(ClockReportRequest $request)
     {
         try {
-            $report = $this->clockActionsService->getClockReport($request->all());
+            $user = User::where('id', $request['user_id'])->first();
+            if ( ! $user) {
+                return response()->json(['error' => 'Usuário não encontrado'], 404);
+            }
+
+            $this->clockActionsService = new ClockActionsService(new ClockEventRepository, $user);
+
+            $report = $this->clockActionsService->getClockReport($request);
+
             return response()->json($report);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Usuário não encontrado'], 404);

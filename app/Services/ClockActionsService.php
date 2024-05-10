@@ -2,19 +2,31 @@
 
 namespace App\Services;
 
+use App\Http\Requests\ClockReportRequest;
 use App\Http\Resources\EventDataResource;
 use App\Http\Resources\EntryDataResource;
 use App\Http\Resources\ReportDataResource;
 use App\Models\ClockEvent;
 use App\Models\User;
+use App\Repositories\ClockEventRepository;
+use App\Traits\EventFilterTrait;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
 
 class ClockActionsService
 {
+    use EventFilterTrait;
+
+    protected ClockEventRepository $clockEventRepository;
+    protected User $user;
+
+    public function __construct(ClockEventRepository $clockEventRepository, User $user)
+    {
+        $this->clockEventRepository = $clockEventRepository;
+        $this->user = $user;
+    }
+
     public function registerClock(int $id): string
     {
         $clockEvent = ClockEvent::create([
@@ -29,19 +41,21 @@ class ClockActionsService
         return $clockEvent->timestamp;
     }
 
-    public function getClockReport(array $request): ReportDataResource
+    public function getClockReport(ClockReportRequest $request): ReportDataResource
     {
         $user = User::find($request['user_id']);
-        if (!$user) {
-            throw new ModelNotFoundException;
-        }
 
-        $query = $this->generateQuery($request, $user);
+        $startDateLimit = $user->created_at ?? Carbon::minValue();
 
-        $clockEvents = $this->getClockEvents($query, $user->work_journey_hours * 3600);
-        $clockEvents = $this->fillMissingDays($request, $clockEvents, $user->work_journey_hours);
+        $startDate = Carbon::parse(!empty($timestamps['start_date']) ? $timestamps['start_date'] : $startDateLimit);
+        $endDate = Carbon::parse(!empty($timestamps['end_date']) ? $timestamps['end_date'] : Carbon::now())->endOfDay();
 
-        return $this->generateReport($clockEvents, $user);
+        // $clockEventsObject = $this->clockEventRepository->getClockEventsByDate($startDate, $endDate, $this->user);
+
+        $formattedClockEvents = $this->getClockEvents($startDate, $endDate, $user->work_journey_hours * 3600);
+        $formattedClockEvents = $this->fillMissingDays($formattedClockEvents, $request, $user->work_journey_hours = 8);
+
+        return $this->generateReport($formattedClockEvents, $user);
     }
 
     public function setDayOffForDate(array $data): string
@@ -75,7 +89,6 @@ class ClockActionsService
     }
 
     //HOUR CALCULATION
-
     private function calculateTotalTime(object $events): int
     {
         $totalTime = 0;
@@ -134,23 +147,7 @@ class ClockActionsService
     //UTILS
 
     //DATE FORMATTING
-
-    private function generateQuery(array $timestamps, User $user): object
-    {
-        $userCreatedDate = $user->created_at ?? Carbon::minValue();
-
-        $startDate = !empty($timestamps['start_date']) ? $timestamps['start_date'] : $userCreatedDate;
-        $endDate = !empty($timestamps['end_date']) ? $timestamps['end_date'] : Carbon::now();
-
-        $startDate = Carbon::parse($startDate);
-        $endDate = Carbon::parse($endDate)->endOfDay();
-
-        return ClockEvent::where('user_id', $user->id)
-            ->with('user')
-            ->whereBetween('timestamp', [$startDate, $endDate]);
-    }
-
-    private function getDateRange(array $request): object
+    private function getDateRange(ClockReportRequest $request): object
     {
         $userId = $request['user_id'];
         $user = User::find($userId);
@@ -162,76 +159,9 @@ class ClockActionsService
         return collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate));
     }
 
-    //CONVERSION
-
-    private function convertDecimalToTime(float $hoursDecimal): string
+    private function getClockEvents(Carbon $startDate, Carbon $endDate, int $workJourneyHoursInSec): object
     {
-        $sign = $hoursDecimal < 0 ? '-' : '';
-        $hoursDecimal = abs($hoursDecimal);
-
-        $hours = intval($hoursDecimal);
-        $decimalHours = $hoursDecimal - $hours;
-        $minutes = round($decimalHours * 60);
-
-        if ($minutes == 60) {
-            $hours += 1;
-            $minutes = 0;
-        }
-
-        return sprintf("%s%d:%02d", $sign, $hours, $minutes);
-    }
-
-    private function convertTimeToDecimal(string $time): float
-    {
-        [$hours, $minutes] = explode(':', $time);
-        return $hours + ($minutes / 60);
-    }
-
-    //DATA FORMATTING
-
-    private function groupClockEventsByDate(object $query): object
-    {
-        return $query->orderBy('timestamp', 'asc')->get()
-            ->groupBy(function ($event) {
-                return $event->timestamp->format('Y-m-d');
-            });
-    }
-
-    private function separateEvents(object $events): array
-    {
-        $normalEvents = $this->filterEvents($events, false);
-        $dayOffEvents = $this->filterEvents($events, true);
-
-        return [$normalEvents, $dayOffEvents];
-    }
-
-    private function filterEvents(object $events, bool $isDayOff): object
-    {
-        return $events->filter(function ($event) use ($isDayOff) {
-            $isEventDayOff = (bool)$event['day_off'];
-            $isEventDoctor = (bool)$event['doctor'];
-            return $isDayOff ? ($isEventDayOff || $isEventDoctor) : (!$isEventDayOff && !$isEventDoctor);
-        })->values();
-    }
-
-    private function fillMissingDays(array $request, object $clockEvents, int $userWorkJourneyHours): object
-    {
-        $dateRange = $this->getDateRange($request);
-        foreach ($dateRange as $date) {
-            $date = Carbon::instance($date);
-            $formattedDate = $date->format('Y-m-d');
-            if (!(isset($clockEvents[$formattedDate]))) {
-                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend(), $userWorkJourneyHours);
-                $clockEvents->put($formattedDate, $eventData);
-            }
-        }
-        $clockEvents = $clockEvents->sortKeys();
-        return $clockEvents;
-    }
-
-    private function getClockEvents(object $query, int $workJourneyHoursInSec): object
-    {
-        return $this->groupClockEventsByDate($query)
+        return $this->clockEventRepository->getClockEventsByDate($startDate, $endDate, $this->user)
             ->map(function ($eventsForDate) use ($workJourneyHoursInSec) {
                 list($normalEvents, $dayOffEvents) = $this->separateEvents($eventsForDate);
 
@@ -261,6 +191,47 @@ class ClockActionsService
                     $events
                 );
             });
+    }
+
+    //CONVERSION
+
+    private function convertDecimalToTime(float $hoursDecimal): string
+    {
+        $sign = $hoursDecimal < 0 ? '-' : '';
+        $hoursDecimal = abs($hoursDecimal);
+
+        $hours = intval($hoursDecimal);
+        $decimalHours = $hoursDecimal - $hours;
+        $minutes = round($decimalHours * 60);
+
+        if ($minutes == 60) {
+            $hours += 1;
+            $minutes = 0;
+        }
+
+        return sprintf("%s%d:%02d", $sign, $hours, $minutes);
+    }
+
+    private function convertTimeToDecimal(string $time): float
+    {
+        [$hours, $minutes] = explode(':', $time);
+        return $hours + ($minutes / 60);
+    }
+
+    //DATA FORMATTING
+    private function fillMissingDays(object $clockEvents, ClockReportRequest $request, int $userWorkJourneyHours): object
+    {
+        $dateRange = $this->getDateRange($request);
+        foreach ($dateRange as $date) {
+            $date = Carbon::instance($date);
+            $formattedDate = $date->format('Y-m-d');
+            if (!(isset($clockEvents[$formattedDate]))) {
+                $eventData = $this->createDefaultEntryResponse($formattedDate, $date->isWeekend(), $userWorkJourneyHours);
+                $clockEvents->put($formattedDate, $eventData);
+            }
+        }
+        $clockEvents = $clockEvents->sortKeys();
+        return $clockEvents;
     }
 
     private function generateReport(object $clockEvents, User $user): ReportDataResource
